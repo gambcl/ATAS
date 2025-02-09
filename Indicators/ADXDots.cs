@@ -12,13 +12,21 @@ namespace gambcl.ATAS.Indicators
     public class ADXDots : Indicator
     {
         #region Enums
+
+        public enum ADXDotsDataSeriesIndexEnum
+        {
+            WeakADXDotsValueDataSeries,
+            MediumADXDotsValueDataSeries,
+            StrongADXDotsValueDataSeries
+        }
+
         #endregion
 
         #region Members
 
         private readonly ADX _adx = new();
         private decimal _displayLevel = 50m;
-        private int _displayWidth = 5;
+        private int _displayWidth = 9;
         private decimal _mediumTrendThreshold = 14m;
         private decimal _strongTrendThreshold = 25m;
         private readonly ValueDataSeries _adxDotsWeakSeries = new("WeakADXDots", "Weak ADX Dots")
@@ -141,7 +149,7 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Weak Trend Color", GroupName = "Display", Description = "Dot color used to indicate a weak trend.", Order = 105)]
         public Color WeakTrendColor
         {
-            get => _adxDotsWeakSeries.RenderColor;
+            get => _adxDotsWeakSeries.Color.Convert();
 
             set
             {
@@ -153,7 +161,7 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Medium Trend Color", GroupName = "Display", Description = "Dot color used to indicate a medium trend.", Order = 106)]
         public Color MediumTrendColor
         {
-            get => _adxDotsMediumSeries.RenderColor;
+            get => _adxDotsMediumSeries.Color.Convert();
 
             set
             {
@@ -165,7 +173,7 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Strong Trend Color", GroupName = "Display", Description = "Dot color used to indicate a strong trend.", Order = 107)]
         public Color StrongTrendColor
         {
-            get => _adxDotsStrongSeries.RenderColor;
+            get => _adxDotsStrongSeries.Color.Convert();
 
             set
             {
