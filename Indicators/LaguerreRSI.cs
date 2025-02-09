@@ -1,7 +1,9 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
+using OFT.Rendering.Context;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Drawing;
 
 namespace gambcl.ATAS.Indicators
 {
@@ -13,6 +15,7 @@ namespace gambcl.ATAS.Indicators
 
         public enum LaguerreRSIDataSeriesIndexEnum
         {
+            LaguerreRSIValueDataSeries,
             Internal0,
             Internal1,
             Internal2,
@@ -20,10 +23,7 @@ namespace gambcl.ATAS.Indicators
             Internal4,
             Internal5,
             Internal6,
-            Internal7,
-            OverboughtRangeDataSeries,
-            OversoldRangeDataSeries,
-            LaguerreRSIValueDataSeries
+            Internal7
         }
 
         #endregion
@@ -91,16 +91,6 @@ namespace gambcl.ATAS.Indicators
             VisualType = VisualMode.Hide,
             IsHidden = true,
             IgnoredByAlerts = true
-        };
-        private RangeDataSeries _overboughtRangeSeries = new RangeDataSeries("OverboughtRange", "Overbought Range")
-        {
-            DrawAbovePrice = false,
-            RangeColor = DefaultColors.Red.GetWithTransparency(60).Convert()
-        };
-        private RangeDataSeries _oversoldRangeSeries = new RangeDataSeries("OversoldRange", "Oversold Range")
-        {
-            DrawAbovePrice = false,
-            RangeColor = DefaultColors.Green.GetWithTransparency(60).Convert()
         };
 
         private decimal _lastValue = 0m;
@@ -187,7 +177,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "OverboughtLevel", GroupName = "Thresholds", Order = 301)]
+        [Display(Name = "Overbought Level", GroupName = "Thresholds", Order = 301)]
         [Range(0, 100)]
         public decimal OverboughtLevel
         {
@@ -201,7 +191,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "OversoldLevel", GroupName = "Thresholds", Order = 302)]
+        [Display(Name = "Oversold Level", GroupName = "Thresholds", Order = 302)]
         [Range(0, 100)]
         public decimal OversoldLevel
         {
@@ -213,6 +203,12 @@ namespace gambcl.ATAS.Indicators
                 RecalculateValues();
             }
         }
+
+        [Display(Name = "Show Overbought Region", GroupName = "Thresholds", Order = 303)]
+        public FilterColor ShowOverboughtRegion { get; set; }
+
+        [Display(Name = "Show Oversold Region", GroupName = "Thresholds", Order = 304)]
+        public FilterColor ShowOversoldRegion { get; set; }
 
         [Display(Name = "Enter Overbought", GroupName = "Alerts", Description = "When enabled, an alert is triggered by the Laguerre RSI entering the overbought region, using the specified sound file.", Order = 401)]
         public FilterString EnterOverboughtAlertFilter { get; set; }
@@ -234,9 +230,12 @@ namespace gambcl.ATAS.Indicators
         {
             Panel = IndicatorDataProvider.NewPanel;
             DenyToChangePanel = true;
+            EnableCustomDrawing = true;
+            SubscribeToDrawingEvents(DrawingLayouts.LatestBar);
 
             // NOTE: The DataSeries must match the order found in the LaguerreRSIDataSeriesIndexEnum enum.
-            DataSeries[0] = _l0Series;
+            DataSeries[0] = _lrsiSeries;
+            DataSeries.Add(_l0Series);
             DataSeries.Add(_l1Series);
             DataSeries.Add(_l2Series);
             DataSeries.Add(_l3Series);
@@ -244,9 +243,6 @@ namespace gambcl.ATAS.Indicators
             DataSeries.Add(_gHSeries);
             DataSeries.Add(_gLSeries);
             DataSeries.Add(_gCSeries);
-            DataSeries.Add(_overboughtRangeSeries);
-            DataSeries.Add(_oversoldRangeSeries);
-            DataSeries.Add(_lrsiSeries);
 
             UseFractalEnergy = true;
             Alpha = 0.2m;
@@ -256,6 +252,9 @@ namespace gambcl.ATAS.Indicators
 
             OverboughtLevel = 80m;
             OversoldLevel = 20m;
+
+            ShowOverboughtRegion = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(60).Convert() };
+            ShowOversoldRegion = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(60).Convert() };
 
             EnterOverboughtAlertFilter = new(true) { Value = "alert1" };
             ExitOverboughtAlertFilter = new(true) { Value = "alert1" };
@@ -267,18 +266,11 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
-        // We override this index operator because the LaguerreRSIValueDataSeries is not at the usual index 0 (due to Z-ordering drawing requirements).
-        public new decimal this[int index]
-        {
-            get => (decimal)(DataSeries[(int)LaguerreRSIDataSeriesIndexEnum.LaguerreRSIValueDataSeries][index]);
-
-            set => DataSeries[(int)LaguerreRSIDataSeriesIndexEnum.LaguerreRSIValueDataSeries][index] = value;
-        }
-
         protected override void OnCalculate(int bar, decimal value)
         {
             if (bar == 0)
             {
+                _lrsiSeries.Clear();
                 _l0Series.Clear();
                 _l1Series.Clear();
                 _l2Series.Clear();
@@ -287,16 +279,8 @@ namespace gambcl.ATAS.Indicators
                 _gHSeries.Clear();
                 _gLSeries.Clear();
                 _gCSeries.Clear();
-                _overboughtRangeSeries.Clear();
-                _oversoldRangeSeries.Clear();
-                _lrsiSeries.Clear();
                 return;
             }
-
-            _overboughtRangeSeries[bar].Upper = 100m;
-            _overboughtRangeSeries[bar].Lower = _overboughtLevel;
-            _oversoldRangeSeries[bar].Upper = _oversoldLevel;
-            _oversoldRangeSeries[bar].Lower = 0m;
 
             if (InstrumentInfo is null)
                 return;
@@ -412,7 +396,7 @@ namespace gambcl.ATAS.Indicators
                 {
                     if ((_lastValue < _overboughtLevel && this[bar] >= _overboughtLevel) && _lastEnterOverboughtAlert != bar)
                     {
-                        AddAlert(EnterOverboughtAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI entering overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), _overboughtRangeSeries.RangeColor);
+                        AddAlert(EnterOverboughtAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI entering overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), ShowOverboughtRegion.Value);
                         _lastEnterOverboughtAlert = bar;
                     }
                 }
@@ -421,7 +405,7 @@ namespace gambcl.ATAS.Indicators
                 {
                     if ((_lastValue >= _overboughtLevel && this[bar] < _overboughtLevel) && _lastExitOverboughtAlert != bar)
                     {
-                        AddAlert(ExitOverboughtAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI leaving overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), _overboughtRangeSeries.RangeColor);
+                        AddAlert(ExitOverboughtAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI leaving overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), ShowOverboughtRegion.Value);
                         _lastExitOverboughtAlert = bar;
                     }
                 }
@@ -430,7 +414,7 @@ namespace gambcl.ATAS.Indicators
                 {
                     if ((_lastValue > _oversoldLevel && this[bar] <= _oversoldLevel) && _lastEnterOversoldAlert != bar)
                     {
-                        AddAlert(EnterOversoldAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI entering oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), _oversoldRangeSeries.RangeColor);
+                        AddAlert(EnterOversoldAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI entering oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), ShowOversoldRegion.Value);
                         _lastEnterOversoldAlert = bar;
                     }
                 }
@@ -439,13 +423,41 @@ namespace gambcl.ATAS.Indicators
                 {
                     if ((_lastValue <= _oversoldLevel && this[bar] > _oversoldLevel) && _lastExitOversoldAlert != bar)
                     {
-                        AddAlert(ExitOversoldAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI leaving oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), _oversoldRangeSeries.RangeColor);
+                        AddAlert(ExitOversoldAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI leaving oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), ShowOversoldRegion.Value);
                         _lastExitOversoldAlert = bar;
                     }
                 }
             }
 
             _lastValue = this[bar];
+        }
+
+        protected override void OnRender(RenderContext context, DrawingLayouts layout)
+        {
+            base.OnRender(context, layout);
+
+            if (ChartInfo is null) { return; }
+            if (Container is null) { return; }
+
+            int leftX = ChartInfo.GetXByBar(FirstVisibleBarNumber, true);
+            int rightX = ChartInfo.GetXByBar(LastVisibleBarNumber + 1, true);
+            int width = rightX - leftX;
+            int topY = Container.GetYByValue(100);
+            int bottomY = Container.GetYByValue(0);
+
+            if (ShowOverboughtRegion.Enabled)
+            {
+                int overboughtY = Container.GetYByValue(_overboughtLevel);
+                Rectangle overboughtRect = new Rectangle(leftX, topY, width, overboughtY - topY);
+                context.FillRectangle(ShowOverboughtRegion.Value.Convert(), overboughtRect);
+            }
+
+            if (ShowOversoldRegion.Enabled)
+            {
+                int oversoldY = Container.GetYByValue(_oversoldLevel);
+                Rectangle oversoldRect = new Rectangle(leftX, oversoldY, width, bottomY - oversoldY);
+                context.FillRectangle(ShowOversoldRegion.Value.Convert(), oversoldRect);
+            }
         }
 
         #endregion
