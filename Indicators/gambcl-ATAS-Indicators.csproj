@@ -2,30 +2,32 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <RootNamespace>gambcl_ATAS_Indicators</RootNamespace>
+    <RootNamespace>gambcl.ATAS.Indicators</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="ATAS.Indicators">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\ATAS Platform\ATAS.Indicators.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\ATAS Platform\ATAS.Indicators.dll</HintPath>
     </Reference>
     <Reference Include="ATAS.Indicators.Technical">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\ATAS Platform\ATAS.Indicators.Technical.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\ATAS Platform\ATAS.Indicators.Technical.dll</HintPath>
     </Reference>
     <Reference Include="OFT.Attributes">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\ATAS Platform\OFT.Attributes.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\ATAS Platform\OFT.Attributes.dll</HintPath>
     </Reference>
     <Reference Include="OFT.Rendering">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\ATAS Platform\OFT.Rendering.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\ATAS Platform\OFT.Rendering.dll</HintPath>
     </Reference>
     <Reference Include="System.Drawing.Common">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\ATAS Platform\System.Drawing.Common.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\ATAS Platform\System.Drawing.Common.dll</HintPath>
     </Reference>
     <Reference Include="Utils.Common">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\ATAS Platform\Utils.Common.dll</HintPath>
+      <HintPath>C:\Program Files (x86)\ATAS Platform\Utils.Common.dll</HintPath>
     </Reference>
   </ItemGroup>
 

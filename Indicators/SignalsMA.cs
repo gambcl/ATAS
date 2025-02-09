@@ -1,12 +1,8 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
 using ATAS.Indicators.Technical;
-using OFT.Rendering.Context;
-using OFT.Rendering.Tools;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Drawing;
-using Utils.Common.Logging;
 using CrossColor = System.Windows.Media.Color;
 
 namespace gambcl.ATAS.Indicators
@@ -15,11 +11,22 @@ namespace gambcl.ATAS.Indicators
     [Category("gambcl-ATAS-Indicators")]
     public class SignalsMA : Indicator
     {
+        #region Enums
+
+        public enum SignalsMADataSeriesIndexEnum
+        {
+            MAValueDataSeries,
+            BuySignalValueDataSeries,
+            SellSignalValueDataSeries
+        }
+
         public enum MATypeEnum
         {
             SMA,
             EMA
         }
+
+        #endregion
 
         #region Members
 
@@ -54,7 +61,8 @@ namespace gambcl.ATAS.Indicators
 
         #region Properties
 
-        [Display(Name = "MA Type", GroupName = "Parameters", Description = "The type of MA")]
+        [OFT.Attributes.Parameter]
+        [Display(Name = "MA Type", GroupName = "Settings", Description = "The type of Moving Average.", Order = 001)]
         public MATypeEnum MAType
         {
             get => _maType;
@@ -68,7 +76,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "Period", GroupName = "Parameters", Description = "The period of the MA")]
+        [Display(Name = "Period", GroupName = "Settings", Description = "The period of the Moving Average.", Order = 002)]
         [Range(1, 1000)]
         public int Period
         {
@@ -84,8 +92,7 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
-        [OFT.Attributes.Parameter]
-        [Display(Name = "Offset", GroupName = "Signals", Description = "The offset between signal and bar")]
+        [Display(Name = "Offset", GroupName = "Signals", Description = "The vertical offset between signal and bar.", Order = 101)]
         [Range(0, 1000)]
         public int SignalOffset
         {
@@ -98,17 +105,11 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
-        [Display(Name = "Use Alerts", GroupName = "Alerts", Description = "Show alerts when price crosses and closes beyond the MA")]
-        public bool UseAlerts { get; set; }
+        [Display(Name = "Buy Alerts", GroupName = "Alerts", Description = "When enabled, an alert is triggered when price crosses and closes above the Moving Average, using the specified sound file.", Order = 201)]
+        public FilterString BuyAlertFilter { get; set; }
 
-        [Display(Name = "Alert File", GroupName = "Alerts", Description = "Alert sound")]
-        public string AlertFile { get; set; } = "alert1";
-
-        [Display(Name = "Font Color", GroupName = "Alerts", Description = "Font color for alerts")]
-        public CrossColor FontColor { get; set; } = System.Drawing.Color.White.Convert();
-
-        [Display(Name = "Background Color", GroupName = "Alerts", Description = "Background color for alerts")]
-        public CrossColor BackgroundColor { get; set; } = System.Drawing.Color.DimGray.Convert();
+        [Display(Name = "Sell Alerts", GroupName = "Alerts", Description = "When enabled, an alert is triggered when price crosses and closes below the Moving Average, using the specified sound file.", Order = 202)]
+        public FilterString SellAlertFilter { get; set; }
 
         #endregion
 
@@ -116,6 +117,7 @@ namespace gambcl.ATAS.Indicators
 
         public SignalsMA()
         {
+            // NOTE: The DataSeries must match the order found in the SignalsMADataSeriesIndexEnum enum.
             DataSeries[0] = _maSeries;
             DataSeries.Add(_buySignalsSeries);
             DataSeries.Add(_sellSignalsSeries);
@@ -123,6 +125,9 @@ namespace gambcl.ATAS.Indicators
             MAType = MATypeEnum.SMA;
             Period = 9;
             SignalOffset = 1;
+
+            BuyAlertFilter = new(true) { Value = "alert1" };
+            SellAlertFilter = new(true) { Value = "alert1" };
         }
 
         #endregion
@@ -143,15 +148,15 @@ namespace gambcl.ATAS.Indicators
                     return;
 
                 // Alerts
-                if (UseAlerts && (_lastBar != bar) && (bar == CurrentBar - 1))
+                if ((_lastBar != bar) && (bar == CurrentBar - 1))
                 {
-                    if (_buySignalsSeries[bar - 1] != 0)
+                    if (BuyAlertFilter.Enabled && _buySignalsSeries[bar - 1] != 0)
                     {
-                        AddAlert(AlertFile, InstrumentInfo.Instrument, $"BUY SIGNAL: Price crossed and closed above the {Period} {MAType}", BackgroundColor, FontColor);
+                        AddAlert(BuyAlertFilter.Value, InstrumentInfo.Instrument, $"BUY SIGNAL: Price crossed and closed above the {Period} {MAType}", DefaultColors.Black.Convert(), _buySignalsSeries.ValuesColor.Convert());
                     }
-                    if (_sellSignalsSeries[bar - 1] != 0)
+                    if (SellAlertFilter.Enabled && _sellSignalsSeries[bar - 1] != 0)
                     {
-                        AddAlert(AlertFile, InstrumentInfo.Instrument, $"SELL SIGNAL: Price crossed and closed below the {Period} {MAType}", BackgroundColor, FontColor);
+                        AddAlert(SellAlertFilter.Value, InstrumentInfo.Instrument, $"SELL SIGNAL: Price crossed and closed below the {Period} {MAType}", DefaultColors.Black.Convert(), _sellSignalsSeries.ValuesColor.Convert());
                     }
                 }
 
