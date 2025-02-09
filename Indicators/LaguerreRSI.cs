@@ -279,7 +279,6 @@ namespace gambcl.ATAS.Indicators
         {
             if (bar == 0)
             {
-                _lrsiSeries.Clear();
                 _l0Series.Clear();
                 _l1Series.Clear();
                 _l2Series.Clear();
@@ -290,6 +289,7 @@ namespace gambcl.ATAS.Indicators
                 _gCSeries.Clear();
                 _overboughtRangeSeries.Clear();
                 _oversoldRangeSeries.Clear();
+                _lrsiSeries.Clear();
                 return;
             }
 
