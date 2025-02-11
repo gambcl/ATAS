@@ -156,6 +156,8 @@ namespace gambcl.ATAS.Indicators
             if (CurrentBar < Math.Max(_fastPeriod, _slowPeriod))
                 return;
 
+            var candle = GetCandle(bar);
+
             decimal fastValue = 0m;
             decimal slowValue = 0m;
             if (MAType == MATypeEnum.EMA)
@@ -170,19 +172,19 @@ namespace gambcl.ATAS.Indicators
             }
             _fastMASeries[bar] = fastValue;
             _slowMASeries[bar] = slowValue;
-            if (fastValue > slowValue)
+            if (fastValue >= slowValue || (candle.Close != 0m && (Math.Abs(fastValue - slowValue) / candle.Close) < 0.0001m))
             {
                 // Bullish cloud
                 _bullishCloudSeries[bar].Upper = fastValue;
                 _bullishCloudSeries[bar].Lower = slowValue;
-                _bearishCloudSeries[bar].Upper = 0m;
-                _bearishCloudSeries[bar].Lower = 0m;
+                //_bearishCloudSeries[bar].Upper = 0m;
+                //_bearishCloudSeries[bar].Lower = 0m;
             }
-            else
+            if (fastValue <= slowValue || (candle.Close != 0m && (Math.Abs(fastValue - slowValue) / candle.Close) < 0.0001m))
             {
                 // Bearish cloud
-                _bullishCloudSeries[bar].Upper = 0m;
-                _bullishCloudSeries[bar].Lower = 0m;
+                //_bullishCloudSeries[bar].Upper = 0m;
+                //_bullishCloudSeries[bar].Lower = 0m;
                 _bearishCloudSeries[bar].Upper = slowValue;
                 _bearishCloudSeries[bar].Lower = fastValue;
             }
