@@ -3,7 +3,6 @@ using ATAS.Indicators.Drawing;
 using ATAS.Indicators.Technical;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using CrossColor = System.Windows.Media.Color;
 
 namespace gambcl.ATAS.Indicators
 {
@@ -33,8 +32,8 @@ namespace gambcl.ATAS.Indicators
         private MATypeEnum _maType = MATypeEnum.SMA;
         private int _period = 9;
         private int _signalOffset = 0;
-        private readonly SMA _sma = new();
-        private readonly EMA _ema = new();
+        private SMA _sma = new();
+        private EMA _ema = new();
         private readonly ValueDataSeries _maSeries = new("MA", "Moving Average")
         {
             VisualType = VisualMode.Line,
@@ -117,7 +116,7 @@ namespace gambcl.ATAS.Indicators
 
         public SignalsMA()
         {
-            // NOTE: The DataSeries must match the order found in the SignalsMADataSeriesIndexEnum enum.
+            // NOTE: The DataSeries must match the order found in SignalsMADataSeriesIndexEnum.
             DataSeries[0] = _maSeries;
             DataSeries.Add(_buySignalsSeries);
             DataSeries.Add(_sellSignalsSeries);
@@ -141,6 +140,8 @@ namespace gambcl.ATAS.Indicators
                 _maSeries.Clear();
                 _buySignalsSeries.Clear();
                 _sellSignalsSeries.Clear();
+                _sma = new() { Period = _period };
+                _ema = new() { Period = _period };
             }
             else
             {
