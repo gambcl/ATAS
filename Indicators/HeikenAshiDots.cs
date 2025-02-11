@@ -136,6 +136,7 @@ namespace gambcl.ATAS.Indicators
         {
             Panel = IndicatorDataProvider.NewPanel;
 
+            // NOTE: The DataSeries must match the order found in HeikenAshiDotsDataSeriesIndexEnum.
             DataSeries[0] = _trendDotsBullishSeries;
             DataSeries.Add(_trendDotsChangingSeries);
             DataSeries.Add(_trendDotsBearishSeries);

@@ -46,6 +46,7 @@ namespace gambcl.ATAS.Indicators
 
         public PaperFeet()
         {
+            // NOTE: The DataSeries must match the order found in PaperFeetDataSeriesIndexEnum.
             DataSeries.Add(_signals);
 
             _isRsiInitialized = false;

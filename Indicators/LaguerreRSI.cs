@@ -233,7 +233,7 @@ namespace gambcl.ATAS.Indicators
             EnableCustomDrawing = true;
             SubscribeToDrawingEvents(DrawingLayouts.LatestBar);
 
-            // NOTE: The DataSeries must match the order found in the LaguerreRSIDataSeriesIndexEnum enum.
+            // NOTE: The DataSeries must match the order found in LaguerreRSIDataSeriesIndexEnum.
             DataSeries[0] = _lrsiSeries;
             DataSeries.Add(_l0Series);
             DataSeries.Add(_l1Series);

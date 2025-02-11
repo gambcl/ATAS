@@ -190,6 +190,7 @@ namespace gambcl.ATAS.Indicators
         {
             Panel = IndicatorDataProvider.NewPanel;
 
+            // NOTE: The DataSeries must match the order found in ADXDotsDataSeriesIndexEnum.
             DataSeries[0] = _adxDotsWeakSeries;
             DataSeries.Add(_adxDotsMediumSeries);
             DataSeries.Add(_adxDotsStrongSeries);

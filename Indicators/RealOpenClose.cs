@@ -80,6 +80,7 @@ namespace gambcl.ATAS.Indicators
         {
             DenyToChangePanel = true;
 
+            // NOTE: The DataSeries must match the order found in RealOpenCloseDataSeriesIndexEnum.
             DataSeries[0] = _realOpenSeries;
             DataSeries.Add(_realCloseSeries);
 
