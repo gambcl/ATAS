@@ -15,9 +15,8 @@ namespace gambcl.ATAS.Indicators
 
         public enum ADXDotsDataSeriesIndexEnum
         {
-            WeakADXDotsValueDataSeries,
-            MediumADXDotsValueDataSeries,
-            StrongADXDotsValueDataSeries
+            ADXValueDataSeries,
+            ADXDotsValueDataSeries
         }
 
         #endregion
@@ -29,36 +28,26 @@ namespace gambcl.ATAS.Indicators
         private int _displayWidth = 9;
         private decimal _mediumTrendThreshold = 14m;
         private decimal _strongTrendThreshold = 25m;
-        private readonly ValueDataSeries _adxDotsWeakSeries = new("WeakADXDots", "Weak ADX Dots")
+        private Color _adxDotsWeakTrendColor = Color.FromArgb(255, 225, 190, 231);
+        private Color _adxDotsMediumTrendColor = Color.FromArgb(255, 186, 104, 200);
+        private Color _adxDotsStrongTrendColor = Color.FromArgb(255, 123, 31, 162);
+        private readonly ValueDataSeries _adxSeries = new("ADX")
         {
-            VisualType = VisualMode.Dots,
+            VisualType = VisualMode.Hide,
             ShowZeroValue = false,
             ShowCurrentValue = false,
-            ShowTooltip = false,
-            Color = DefaultColors.White.Convert(),
-            Width = 9,
+            ShowTooltip = true,
             DrawAbovePrice = false,
             IsHidden = true
         };
-        private readonly ValueDataSeries _adxDotsMediumSeries = new("MediumADXDots", "Medium ADX Dots")
+        private readonly ValueDataSeries _adxDotsSeries = new("ADXDots", "ADX Dots")
         {
             VisualType = VisualMode.Dots,
             ShowZeroValue = false,
             ShowCurrentValue = false,
             ShowTooltip = false,
             Color = DefaultColors.White.Convert(),
-            Width = 9,
-            DrawAbovePrice = false,
-            IsHidden = true
-        };
-        private readonly ValueDataSeries _adxDotsStrongSeries = new("StrongADXDots", "Strong ADX Dots")
-        {
-            VisualType = VisualMode.Dots,
-            ShowZeroValue = false,
-            ShowCurrentValue = false,
-            ShowTooltip = false,
-            Color = DefaultColors.White.Convert(),
-            Width = 9,
+            Width = 10,
             DrawAbovePrice = false,
             IsHidden = true
         };
@@ -115,9 +104,7 @@ namespace gambcl.ATAS.Indicators
             set
             {
                 _displayWidth = value;
-                _adxDotsWeakSeries.Width = value;
-                _adxDotsMediumSeries.Width = value;
-                _adxDotsStrongSeries.Width = value;
+                _adxDotsSeries.Width = value;
                 RecalculateValues();
             }
         }
@@ -149,11 +136,11 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Weak Trend Color", GroupName = "Display", Description = "Dot color used to indicate a weak trend.", Order = 105)]
         public Color WeakTrendColor
         {
-            get => _adxDotsWeakSeries.Color.Convert();
+            get => _adxDotsWeakTrendColor;
 
             set
             {
-                _adxDotsWeakSeries.Color = value.Convert();
+                _adxDotsWeakTrendColor = value;
                 RecalculateValues();
             }
         }
@@ -161,11 +148,11 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Medium Trend Color", GroupName = "Display", Description = "Dot color used to indicate a medium trend.", Order = 106)]
         public Color MediumTrendColor
         {
-            get => _adxDotsMediumSeries.Color.Convert();
+            get => _adxDotsMediumTrendColor;
 
             set
             {
-                _adxDotsMediumSeries.Color = value.Convert();
+                _adxDotsMediumTrendColor = value;
                 RecalculateValues();
             }
         }
@@ -173,11 +160,11 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Strong Trend Color", GroupName = "Display", Description = "Dot color used to indicate a strong trend.", Order = 107)]
         public Color StrongTrendColor
         {
-            get => _adxDotsStrongSeries.Color.Convert();
+            get => _adxDotsStrongTrendColor;
 
             set
             {
-                _adxDotsStrongSeries.Color = value.Convert();
+                _adxDotsStrongTrendColor = value;
                 RecalculateValues();
             }
         }
@@ -191,14 +178,13 @@ namespace gambcl.ATAS.Indicators
             Panel = IndicatorDataProvider.NewPanel;
 
             // NOTE: The DataSeries must match the order found in ADXDotsDataSeriesIndexEnum.
-            DataSeries[0] = _adxDotsWeakSeries;
-            DataSeries.Add(_adxDotsMediumSeries);
-            DataSeries.Add(_adxDotsStrongSeries);
+            DataSeries[0] = _adxSeries;
+            DataSeries.Add(_adxDotsSeries);
 
             Period = 14;
             SmoothPeriod = 14;
             DisplayLevel = 50m;
-            DisplayWidth = 9;
+            DisplayWidth = 10;
             MediumTrendThreshold = 14m;
             StrongTrendThreshold = 25m;
             WeakTrendColor = Color.FromArgb(255, 225, 190, 231);
@@ -212,16 +198,15 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
+        protected override void OnRecalculate()
+        {
+            base.OnRecalculate();
+
+            DataSeries.ForEach(ds => ds.Clear());
+        }
+
         protected override void OnCalculate(int bar, decimal value)
         {
-            if (bar == 0)
-            {
-                _adxDotsWeakSeries.Clear();
-                _adxDotsMediumSeries.Clear();
-                _adxDotsStrongSeries.Clear();
-                return;
-            }
-
             if (InstrumentInfo is null)
                 return;
 
@@ -229,23 +214,19 @@ namespace gambcl.ATAS.Indicators
                 return;
 
             var adx = _adx[bar];
+            _adxSeries[bar] = adx;
+            _adxDotsSeries[bar] = _displayLevel;
             if (adx > _strongTrendThreshold)
             {
-                _adxDotsWeakSeries[bar] = 0m;
-                _adxDotsMediumSeries[bar] = 0m;
-                _adxDotsStrongSeries[bar] = _displayLevel;
+                _adxDotsSeries.Colors[bar] = _adxDotsStrongTrendColor;
             }
             else if (adx > _mediumTrendThreshold)
             {
-                _adxDotsWeakSeries[bar] = 0m;
-                _adxDotsMediumSeries[bar] = _displayLevel;
-                _adxDotsStrongSeries[bar] = 0m;
+                _adxDotsSeries.Colors[bar] = _adxDotsMediumTrendColor;
             }
             else
             {
-                _adxDotsWeakSeries[bar] = _displayLevel;
-                _adxDotsMediumSeries[bar] = 0m;
-                _adxDotsStrongSeries[bar] = 0m;
+                _adxDotsSeries.Colors[bar] = _adxDotsWeakTrendColor;
             }
         }
 

@@ -15,9 +15,7 @@ namespace gambcl.ATAS.Indicators
 
         public enum HeikenAshiDotsDataSeriesIndexEnum
         {
-            BullishTrendDotsValueDataSeries,
-            ChangingTrendDotsValueDataSeries,
-            BearishTrendDotsValueDataSeries
+            HeikenAshiDotsValueDataSeries
         }
 
         #endregion
@@ -27,36 +25,17 @@ namespace gambcl.ATAS.Indicators
         private readonly HeikenAshi _ha = new();
         private decimal _displayLevel = 50m;
         private int _displayWidth = 9;
-        private readonly ValueDataSeries _trendDotsBullishSeries = new("BullishTrendDots", "Bullish Trend Dots")
+        private Color _haDotsBullishColor = DefaultColors.Green;
+        private Color _haDotsChangingColor = DefaultColors.Yellow;
+        private Color _haDotsBearishColor = DefaultColors.Red;
+        private readonly ValueDataSeries _haDotsSeries = new("HeikenAshiDots", "Heiken Ashi Dots")
         {
             VisualType = VisualMode.Dots,
             ShowZeroValue = false,
             ShowCurrentValue = false,
             ShowTooltip = false,
-            Color = DefaultColors.Green.Convert(),
-            Width = 9,
-            DrawAbovePrice = false,
-            IsHidden = true
-        };
-        private readonly ValueDataSeries _trendDotsChangingSeries = new("ChangingTrendDots", "Changing Trend Dots")
-        {
-            VisualType = VisualMode.Dots,
-            ShowZeroValue = false,
-            ShowCurrentValue = false,
-            ShowTooltip = false,
-            Color = DefaultColors.Yellow.Convert(),
-            Width = 9,
-            DrawAbovePrice = false,
-            IsHidden = true
-        };
-        private readonly ValueDataSeries _trendDotsBearishSeries = new("BearishTrendDots", "Bearish Trend Dots")
-        {
-            VisualType = VisualMode.Dots,
-            ShowZeroValue = false,
-            ShowCurrentValue = false,
-            ShowTooltip = false,
-            Color = DefaultColors.Red.Convert(),
-            Width = 9,
+            Color = DefaultColors.White.Convert(),
+            Width = 10,
             DrawAbovePrice = false,
             IsHidden = true
         };
@@ -85,9 +64,7 @@ namespace gambcl.ATAS.Indicators
             set
             {
                 _displayWidth = value;
-                _trendDotsBullishSeries.Width = value;
-                _trendDotsChangingSeries.Width = value;
-                _trendDotsBearishSeries.Width = value;
+                _haDotsSeries.Width = value;
                 RecalculateValues();
             }
         }
@@ -95,11 +72,11 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Bullish Trend Color", GroupName = "Display", Description = "Dot color used to indicate a bullish trend.", Order = 105)]
         public Color BullishTrendColor
         {
-            get => _trendDotsBullishSeries.Color.Convert();
+            get => _haDotsBullishColor;
 
             set
             {
-                _trendDotsBullishSeries.Color = value.Convert();
+                _haDotsBullishColor = value;
                 RecalculateValues();
             }
         }
@@ -107,11 +84,11 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Changing Trend Color", GroupName = "Display", Description = "Dot color used to indicate a changing trend.", Order = 106)]
         public Color ChangingTrendColor
         {
-            get => _trendDotsChangingSeries.Color.Convert();
+            get => _haDotsChangingColor;
 
             set
             {
-                _trendDotsChangingSeries.Color = value.Convert();
+                _haDotsChangingColor = value;
                 RecalculateValues();
             }
         }
@@ -119,11 +96,11 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Bearish Trend Color", GroupName = "Display", Description = "Dot color used to indicate a bearish trend.", Order = 107)]
         public Color BearishTrendColor
         {
-            get => _trendDotsBearishSeries.Color.Convert();
+            get => _haDotsBearishColor;
 
             set
             {
-                _trendDotsBearishSeries.Color = value.Convert();
+                _haDotsBearishColor = value;
                 RecalculateValues();
             }
         }
@@ -137,12 +114,10 @@ namespace gambcl.ATAS.Indicators
             Panel = IndicatorDataProvider.NewPanel;
 
             // NOTE: The DataSeries must match the order found in HeikenAshiDotsDataSeriesIndexEnum.
-            DataSeries[0] = _trendDotsBullishSeries;
-            DataSeries.Add(_trendDotsChangingSeries);
-            DataSeries.Add(_trendDotsBearishSeries);
+            DataSeries[0] = _haDotsSeries;
 
             DisplayLevel = 50m;
-            DisplayWidth = 9;
+            DisplayWidth = 10;
             BullishTrendColor = DefaultColors.Green;
             ChangingTrendColor = DefaultColors.Yellow;
             BearishTrendColor = DefaultColors.Red;
@@ -154,16 +129,15 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
+        protected override void OnRecalculate()
+        {
+            base.OnRecalculate();
+
+            _haDotsSeries.Clear();
+        }
+
         protected override void OnCalculate(int bar, decimal value)
         {
-            if (bar == 0)
-            {
-                _trendDotsBullishSeries.Clear();
-                _trendDotsChangingSeries.Clear();
-                _trendDotsBearishSeries.Clear();
-                return;
-            }
-
             if (InstrumentInfo is null)
                 return;
 
@@ -175,23 +149,18 @@ namespace gambcl.ATAS.Indicators
             var currHACandle = haCandles[bar];
             var prevCandleTrend = (prevHACandle.Close >= prevHACandle.Open) ? 1 : -1;
             var currCandleTrend = (currHACandle.Close >= currHACandle.Open) ? 1 : -1;
+            _haDotsSeries[bar] = _displayLevel;
             if (currCandleTrend == prevCandleTrend && currCandleTrend > 0)
             {
-                _trendDotsBullishSeries[bar] = _displayLevel;
-                _trendDotsChangingSeries[bar] = 0m;
-                _trendDotsBearishSeries[bar] = 0m;
+                _haDotsSeries.Colors[bar] = _haDotsBullishColor;
             }
             else if (currCandleTrend == prevCandleTrend && currCandleTrend < 0)
             {
-                _trendDotsBullishSeries[bar] = 0m;
-                _trendDotsChangingSeries[bar] = 0m;
-                _trendDotsBearishSeries[bar] = _displayLevel;
+                _haDotsSeries.Colors[bar] = _haDotsBearishColor;
             }
             else
             {
-                _trendDotsBullishSeries[bar] = 0m;
-                _trendDotsChangingSeries[bar] = _displayLevel;
-                _trendDotsBearishSeries[bar] = 0m;
+                _haDotsSeries.Colors[bar] = _haDotsChangingColor;
             }
         }
 
