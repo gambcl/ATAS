@@ -266,22 +266,15 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
+        protected override void OnRecalculate()
+        {
+            base.OnRecalculate();
+
+            DataSeries.ForEach(ds => ds.Clear());
+        }
+
         protected override void OnCalculate(int bar, decimal value)
         {
-            if (bar == 0)
-            {
-                _lrsiSeries.Clear();
-                _l0Series.Clear();
-                _l1Series.Clear();
-                _l2Series.Clear();
-                _l3Series.Clear();
-                _gOSeries.Clear();
-                _gHSeries.Clear();
-                _gLSeries.Clear();
-                _gCSeries.Clear();
-                return;
-            }
-
             if (InstrumentInfo is null)
                 return;
 

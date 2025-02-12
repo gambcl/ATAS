@@ -96,14 +96,15 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
+        protected override void OnRecalculate()
+        {
+            base.OnRecalculate();
+
+            DataSeries.ForEach(ds => ds.Clear());
+        }
+
         protected override void OnCalculate(int bar, decimal value)
         {
-            if (bar == 0)
-            {
-                _realOpenSeries.Clear();
-                _realCloseSeries.Clear();
-            }
-
             var candle = GetCandle(bar);
             _realOpenSeries[bar] = ShowRealOpen.Enabled ? candle.Open : 0m;
             _realCloseSeries[bar] = ShowRealClose.Enabled ? candle.Close : 0m;

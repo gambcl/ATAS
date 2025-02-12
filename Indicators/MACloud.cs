@@ -138,25 +138,25 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
+        protected override void OnRecalculate()
+        {
+            base.OnRecalculate();
+
+            DataSeries.ForEach(ds => ds.Clear());
+
+            _smaFast = new() { Period = _fastPeriod };
+            _smaSlow = new() { Period = _slowPeriod };
+            _emaFast = new() { Period = _fastPeriod };
+            _emaSlow = new() { Period = _slowPeriod };
+        }
+
         protected override void OnCalculate(int bar, decimal value)
         {
             if (bar == 0)
-            {
-                _fastMASeries.Clear();
-                _slowMASeries.Clear();
-                _bullishCloudSeries.Clear();
-                _bearishCloudSeries.Clear();
-                _smaFast = new() { Period = _fastPeriod };
-                _smaSlow = new() { Period = _slowPeriod };
-                _emaFast = new() { Period = _fastPeriod };
-                _emaSlow = new() { Period = _slowPeriod };
                 return;
-            }
 
             if (CurrentBar < Math.Max(_fastPeriod, _slowPeriod))
                 return;
-
-            var candle = GetCandle(bar);
 
             decimal fastValue = 0m;
             decimal slowValue = 0m;
@@ -172,19 +172,15 @@ namespace gambcl.ATAS.Indicators
             }
             _fastMASeries[bar] = fastValue;
             _slowMASeries[bar] = slowValue;
-            if (fastValue >= slowValue || (candle.Close != 0m && (Math.Abs(fastValue - slowValue) / candle.Close) < 0.0001m))
+            if (fastValue >= slowValue || (_fastMASeries[bar - 1] > _slowMASeries[bar - 1]))
             {
                 // Bullish cloud
                 _bullishCloudSeries[bar].Upper = fastValue;
                 _bullishCloudSeries[bar].Lower = slowValue;
-                //_bearishCloudSeries[bar].Upper = 0m;
-                //_bearishCloudSeries[bar].Lower = 0m;
             }
-            if (fastValue <= slowValue || (candle.Close != 0m && (Math.Abs(fastValue - slowValue) / candle.Close) < 0.0001m))
+            if (fastValue <= slowValue || (_fastMASeries[bar - 1] < _slowMASeries[bar - 1]))
             {
                 // Bearish cloud
-                //_bullishCloudSeries[bar].Upper = 0m;
-                //_bullishCloudSeries[bar].Lower = 0m;
                 _bearishCloudSeries[bar].Upper = slowValue;
                 _bearishCloudSeries[bar].Lower = fastValue;
             }

@@ -1,9 +1,9 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
-using ATAS.Indicators.Technical;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
+using static gambcl.ATAS.Indicators.HeikenAshi;
 
 namespace gambcl.ATAS.Indicators
 {
@@ -22,7 +22,7 @@ namespace gambcl.ATAS.Indicators
 
         #region Members
 
-        private readonly HeikenAshi _ha = new();
+        private readonly gambcl.ATAS.Indicators.HeikenAshi _ha = new();
         private decimal _displayLevel = 50m;
         private int _displayWidth = 9;
         private Color _haDotsBullishColor = DefaultColors.Green;
@@ -133,7 +133,7 @@ namespace gambcl.ATAS.Indicators
         {
             base.OnRecalculate();
 
-            _haDotsSeries.Clear();
+            DataSeries.ForEach(ds => ds.Clear());
         }
 
         protected override void OnCalculate(int bar, decimal value)
@@ -144,7 +144,7 @@ namespace gambcl.ATAS.Indicators
             if (CurrentBar < 3)
                 return;
 
-            var haCandles = (CandleDataSeries)(_ha.DataSeries[1]);
+            var haCandles = (CandleDataSeries)(_ha.DataSeries[(int)HeikenAshiDataSeriesIndexEnum.HeikenAshiCandleDataSeries]);
             var prevHACandle = haCandles[bar-1];
             var currHACandle = haCandles[bar];
             var prevCandleTrend = (prevHACandle.Close >= prevHACandle.Open) ? 1 : -1;

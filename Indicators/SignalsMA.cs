@@ -133,55 +133,57 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
+        protected override void OnRecalculate()
+        {
+            base.OnRecalculate();
+
+            DataSeries.ForEach(ds => ds.Clear());
+
+            _sma = new() { Period = _period };
+            _ema = new() { Period = _period };
+        }
+
         protected override void OnCalculate(int bar, decimal value)
         {
             if (bar == 0)
-            {
-                _maSeries.Clear();
-                _buySignalsSeries.Clear();
-                _sellSignalsSeries.Clear();
-                _sma = new() { Period = _period };
-                _ema = new() { Period = _period };
-            }
-            else
-            {
-                if (CurrentBar < (Period + 1) || InstrumentInfo is null)
-                    return;
+                return;
 
-                // Alerts
-                if ((_lastBar != bar) && (bar == CurrentBar - 1))
+            if (CurrentBar < (Period + 1) || InstrumentInfo is null)
+                return;
+
+            // Alerts
+            if ((_lastBar != bar) && (bar == CurrentBar - 1))
+            {
+                if (BuyAlertFilter.Enabled && _buySignalsSeries[bar - 1] != 0)
                 {
-                    if (BuyAlertFilter.Enabled && _buySignalsSeries[bar - 1] != 0)
-                    {
-                        AddAlert(BuyAlertFilter.Value, InstrumentInfo.Instrument, $"BUY SIGNAL: Price crossed and closed above the {Period} {MAType}", DefaultColors.Black.Convert(), _buySignalsSeries.ValuesColor.Convert());
-                    }
-                    if (SellAlertFilter.Enabled && _sellSignalsSeries[bar - 1] != 0)
-                    {
-                        AddAlert(SellAlertFilter.Value, InstrumentInfo.Instrument, $"SELL SIGNAL: Price crossed and closed below the {Period} {MAType}", DefaultColors.Black.Convert(), _sellSignalsSeries.ValuesColor.Convert());
-                    }
+                    AddAlert(BuyAlertFilter.Value, InstrumentInfo.Instrument, $"BUY SIGNAL: Price crossed and closed above the {Period} {MAType}", DefaultColors.Black.Convert(), _buySignalsSeries.ValuesColor.Convert());
                 }
-
-                // MA
-                var maValue = (_maType == MATypeEnum.EMA) ? _ema.Calculate(bar, value) : _sma.Calculate(bar, value);
-                _maSeries[bar] = maValue;
-
-                // Signals
-                var prevCandle = GetCandle(bar - 1);
-                var currCandle = GetCandle(bar);
-
-                bool buySignal = (prevCandle.Close <= _maSeries[bar - 1]) && currCandle.Close > maValue;
-                _buySignalsSeries[bar] = buySignal ? (currCandle.Low - (InstrumentInfo.TickSize * SignalOffset)) : 0;
-
-                bool sellSignal = (prevCandle.Close >= _maSeries[bar - 1]) && currCandle.Close < maValue;
-                _sellSignalsSeries[bar] = sellSignal ? (currCandle.High + (InstrumentInfo.TickSize * SignalOffset)) : 0;
-
-                /*
-                if (buySignal || sellSignal)
-                    this.LogInfo($"BAR {bar}, PREV CLOSE {prevCandle.Close}, PREV MA {_maSeries[bar - 1]}, CLOSE {currCandle.Close}, MA {maValue}, BUY SIG {buySignal}, SELL SIG {sellSignal}");
-                */
-
-                _lastBar = bar;
+                if (SellAlertFilter.Enabled && _sellSignalsSeries[bar - 1] != 0)
+                {
+                    AddAlert(SellAlertFilter.Value, InstrumentInfo.Instrument, $"SELL SIGNAL: Price crossed and closed below the {Period} {MAType}", DefaultColors.Black.Convert(), _sellSignalsSeries.ValuesColor.Convert());
+                }
             }
+
+            // MA
+            var maValue = (_maType == MATypeEnum.EMA) ? _ema.Calculate(bar, value) : _sma.Calculate(bar, value);
+            _maSeries[bar] = maValue;
+
+            // Signals
+            var prevCandle = GetCandle(bar - 1);
+            var currCandle = GetCandle(bar);
+
+            bool buySignal = (prevCandle.Close <= _maSeries[bar - 1]) && currCandle.Close > maValue;
+            _buySignalsSeries[bar] = buySignal ? (currCandle.Low - (InstrumentInfo.TickSize * SignalOffset)) : 0;
+
+            bool sellSignal = (prevCandle.Close >= _maSeries[bar - 1]) && currCandle.Close < maValue;
+            _sellSignalsSeries[bar] = sellSignal ? (currCandle.High + (InstrumentInfo.TickSize * SignalOffset)) : 0;
+
+            /*
+            if (buySignal || sellSignal)
+                this.LogInfo($"BAR {bar}, PREV CLOSE {prevCandle.Close}, PREV MA {_maSeries[bar - 1]}, CLOSE {currCandle.Close}, MA {maValue}, BUY SIG {buySignal}, SELL SIG {sellSignal}");
+            */
+
+            _lastBar = bar;
         }
 
         #endregion
