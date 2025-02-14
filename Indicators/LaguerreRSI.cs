@@ -42,7 +42,7 @@ namespace gambcl.ATAS.Indicators
             VisualType = VisualMode.Line,
             Color = DefaultColors.White.Convert(),
             ValuesColor = DefaultColors.Gray,
-            Width = 3
+            Width = 2
         };
         private readonly ValueDataSeries _l0Series = new("L0")
         {

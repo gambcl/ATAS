@@ -193,15 +193,15 @@ namespace gambcl.ATAS.Indicators
             DataSeries.Add(_reenterShortSeries);
             DataSeries.Add(_exitSeries);
 
-            ReenterLongSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.Convert() };
-            ReenterShortSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.Convert() };
+            ReenterLongSignalColor = new(true) { Enabled = false, Value = DefaultColors.Green.Convert() };
+            ReenterShortSignalColor = new(true) { Enabled = false, Value = DefaultColors.Red.Convert() };
             ReentrySignalWidth = DefaultEntrySignalWidth;
             ReentrySignalOffset = DefaultEntrySignalOffset;
 
-            ExitLongOppFlatTopSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.Convert() };
-            ExitLongOppTrendDotSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.Convert() };
-            ExitShortOppFlatBottomSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.Convert() };
-            ExitShortOppTrendDotSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.Convert() };
+            ExitLongOppFlatTopSignalColor = new(true) { Enabled = false, Value = DefaultColors.Green.Convert() };
+            ExitLongOppTrendDotSignalColor = new(true) { Enabled = false, Value = DefaultColors.Green.Convert() };
+            ExitShortOppFlatBottomSignalColor = new(true) { Enabled = false, Value = DefaultColors.Red.Convert() };
+            ExitShortOppTrendDotSignalColor = new(true) { Enabled = false, Value = DefaultColors.Red.Convert() };
             ExitSignalWidth = DefaultExitSignalWidth;
             ExitSignalOffset = DefaultExitSignalOffset;
 
