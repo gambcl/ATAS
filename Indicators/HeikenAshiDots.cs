@@ -20,11 +20,18 @@ namespace gambcl.ATAS.Indicators
 
         #endregion
 
+        #region Constants
+
+        const decimal DefaultDisplayLevel = 50m;
+        const int DefaultDisplayWidth = 5;
+
+        #endregion
+
         #region Members
 
         private readonly gambcl.ATAS.Indicators.HeikenAshi _ha = new();
-        private decimal _displayLevel = 50m;
-        private int _displayWidth = 9;
+        private decimal _displayLevel = DefaultDisplayLevel;
+        private int _displayWidth = DefaultDisplayWidth;
         private Color _haDotsBullishColor = DefaultColors.Green;
         private Color _haDotsChangingColor = DefaultColors.Yellow;
         private Color _haDotsBearishColor = DefaultColors.Red;
@@ -35,7 +42,7 @@ namespace gambcl.ATAS.Indicators
             ShowCurrentValue = false,
             ShowTooltip = false,
             Color = DefaultColors.White.Convert(),
-            Width = 10,
+            Width = DefaultDisplayWidth,
             DrawAbovePrice = false,
             IsHidden = true
         };
@@ -116,8 +123,8 @@ namespace gambcl.ATAS.Indicators
             // NOTE: The DataSeries must match the order found in HeikenAshiDotsDataSeriesIndexEnum.
             DataSeries[0] = _haDotsSeries;
 
-            DisplayLevel = 50m;
-            DisplayWidth = 10;
+            DisplayLevel = DefaultDisplayLevel;
+            DisplayWidth = DefaultDisplayWidth;
             BullishTrendColor = DefaultColors.Green;
             ChangingTrendColor = DefaultColors.Yellow;
             BearishTrendColor = DefaultColors.Red;

@@ -21,13 +21,22 @@ namespace gambcl.ATAS.Indicators
 
         #endregion
 
+        #region Constants
+
+        const decimal DefaultDisplayLevel = 50m;
+        const int DefaultDisplayWidth = 5;
+        const decimal DefaultMediumTrendThreshold = 15m;
+        const decimal DefaultStrongTrendThreshold = 23m;
+
+        #endregion
+
         #region Members
 
         private readonly ADX _adx = new();
-        private decimal _displayLevel = 50m;
-        private int _displayWidth = 9;
-        private decimal _mediumTrendThreshold = 14m;
-        private decimal _strongTrendThreshold = 25m;
+        private decimal _displayLevel = DefaultDisplayLevel;
+        private int _displayWidth = DefaultDisplayWidth;
+        private decimal _mediumTrendThreshold = DefaultMediumTrendThreshold;
+        private decimal _strongTrendThreshold = DefaultStrongTrendThreshold;
         private Color _adxDotsWeakTrendColor = Color.FromArgb(255, 225, 190, 231);
         private Color _adxDotsMediumTrendColor = Color.FromArgb(255, 186, 104, 200);
         private Color _adxDotsStrongTrendColor = Color.FromArgb(255, 123, 31, 162);
@@ -47,7 +56,7 @@ namespace gambcl.ATAS.Indicators
             ShowCurrentValue = false,
             ShowTooltip = false,
             Color = DefaultColors.White.Convert(),
-            Width = 10,
+            Width = DefaultDisplayWidth,
             DrawAbovePrice = false,
             IsHidden = true
         };
@@ -183,10 +192,10 @@ namespace gambcl.ATAS.Indicators
 
             Period = 14;
             SmoothPeriod = 14;
-            DisplayLevel = 50m;
-            DisplayWidth = 10;
-            MediumTrendThreshold = 14m;
-            StrongTrendThreshold = 25m;
+            DisplayLevel = DefaultDisplayLevel;
+            DisplayWidth = DefaultDisplayWidth;
+            MediumTrendThreshold = DefaultMediumTrendThreshold;
+            StrongTrendThreshold = DefaultStrongTrendThreshold;
             WeakTrendColor = Color.FromArgb(255, 225, 190, 231);
             MediumTrendColor = Color.FromArgb(255, 186, 104, 200);
             StrongTrendColor = Color.FromArgb(255, 123, 31, 162);

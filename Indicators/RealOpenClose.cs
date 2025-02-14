@@ -20,15 +20,21 @@ namespace gambcl.ATAS.Indicators
 
         #endregion
 
+        #region Constants
+
+        const int DefaultWidth = 2;
+
+        #endregion
+
         #region Members
 
-        private int _width = 3;
+        private int _width = DefaultWidth;
         private readonly ValueDataSeries _realOpenSeries = new("RealOpen", "Real Open")
         {
             VisualType = VisualMode.Hash,
             Color = DefaultColors.White.Convert(),
             IsHidden = true,
-            Width = 3,
+            Width = DefaultWidth,
             DrawAbovePrice = true,
             ShowCurrentValue = false,
             ShowZeroValue = false,
@@ -40,7 +46,7 @@ namespace gambcl.ATAS.Indicators
             VisualType = VisualMode.Hash,
             Color = DefaultColors.Fuchsia.Convert(),
             IsHidden = true,
-            Width = 3,
+            Width = DefaultWidth,
             DrawAbovePrice = true,
             ShowCurrentValue = false,
             ShowZeroValue = false,
@@ -86,7 +92,7 @@ namespace gambcl.ATAS.Indicators
 
             ShowRealOpen = new(true) { Enabled = true, Value = DefaultColors.White.Convert() };
             ShowRealClose = new(true) { Enabled = true, Value = DefaultColors.Fuchsia.Convert() };
-            Width = 3;
+            Width = DefaultWidth;
 
             ShowRealOpen.PropertyChanged += OnFilterPropertyChanged;
             ShowRealClose.PropertyChanged += OnFilterPropertyChanged;

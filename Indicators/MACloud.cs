@@ -51,14 +51,14 @@ namespace gambcl.ATAS.Indicators
         {
             VisualType = VisualMode.Line,
             Color = DefaultColors.Green.Convert(),
-            Width = 2,
+            Width = 1,
             DrawAbovePrice = false
         };
         private readonly ValueDataSeries _slowMASeries = new("SlowMA", "Slow MA")
         {
             VisualType = VisualMode.Line,
             Color = DefaultColors.Red.Convert(),
-            Width = 2,
+            Width = 1,
             DrawAbovePrice = false
         };
 

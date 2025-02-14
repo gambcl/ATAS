@@ -32,8 +32,8 @@ namespace gambcl.ATAS.Indicators
         #region Members
 
         private bool _isRsiInitialized = false;
-        private int _lastBuySignalAlertBar = 0;
-        private int _lastSellSignalAlertBar = 0;
+        private int _lastEnterLongSignalAlertBar = 0;
+        private int _lastEnterShortSignalAlertBar = 0;
         private readonly ValueDataSeries _signals = new("Signals")
         {
             VisualType = VisualMode.Hide,
@@ -44,17 +44,17 @@ namespace gambcl.ATAS.Indicators
 
         #region Properties
 
-        [Display(Name = "Buy Signal", GroupName = "Signals", Description = "When enabled, buy signals will be highlighted in the specified color.", Order = 351)]
-        public FilterColor BuySignalColor {  get; set; }
+        [Display(Name = "Enter LONG", GroupName = "Entry Signals", Description = "When enabled, LONG entry signals will be highlighted in the specified color.", Order = 351)]
+        public FilterColor EnterLongSignalColor {  get; set; }
 
-        [Display(Name = "Sell Signal", GroupName = "Signals", Description = "When enabled, sell signals will be highlighted in the specified color.", Order = 352)]
-        public FilterColor SellSignalColor { get; set; }
+        [Display(Name = "Enter SHORT", GroupName = "Entry Signals", Description = "When enabled, SHORT entry signals will be highlighted in the specified color.", Order = 352)]
+        public FilterColor EnterShortSignalColor { get; set; }
 
-        [Display(Name = "Buy Signal", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a buy signal, using the specified sound file.", Order = 391)]
-        public FilterString BuySignalAlertFilter { get; set; }
+        [Display(Name = "Enter LONG", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a LONG entry signal, using the specified sound file.", Order = 391)]
+        public FilterString EnterLongSignalAlertFilter { get; set; }
 
-        [Display(Name = "Sell Signal", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a sell signal, using the specified sound file.", Order = 392)]
-        public FilterString SellSignalAlertFilter { get; set; }
+        [Display(Name = "Enter SHORT", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a SHORT entry signal, using the specified sound file.", Order = 392)]
+        public FilterString EnterShortSignalAlertFilter { get; set; }
 
         #endregion
 
@@ -65,14 +65,14 @@ namespace gambcl.ATAS.Indicators
             // NOTE: The DataSeries must match the order found in PaperFeetDataSeriesIndexEnum.
             DataSeries.Add(_signals);
 
-            BuySignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(50).Convert() };
-            SellSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(50).Convert() };
+            EnterLongSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(50).Convert() };
+            EnterShortSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(50).Convert() };
 
-            BuySignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            SellSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
+            EnterLongSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
+            EnterShortSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
 
-            BuySignalColor.PropertyChanged += OnSignalPropertyChanged;
-            SellSignalColor.PropertyChanged += OnSignalPropertyChanged;
+            EnterLongSignalColor.PropertyChanged += OnSignalPropertyChanged;
+            EnterShortSignalColor.PropertyChanged += OnSignalPropertyChanged;
 
             _isRsiInitialized = false;
         }
@@ -107,28 +107,28 @@ namespace gambcl.ATAS.Indicators
 
             if (this[bar - 1] <= OversoldLevel && this[bar] > OversoldLevel)
             {
-                // Buy signal
+                // Enter LONG signal
                 _signals[bar] = 1m;
             }
             else if (this[bar - 1] >= OverboughtLevel && this[bar] < OverboughtLevel)
             {
-                // Sell signal
+                // Enter SHORT signal
                 _signals[bar] = -1m;
             }
 
             // Alerts
             if (bar == (CurrentBar - 1) && InstrumentInfo is not null)
             {
-                if (BuySignalColor.Enabled && BuySignalAlertFilter.Enabled && (bar != _lastBuySignalAlertBar) && (_signals[bar] > 0))
+                if (EnterLongSignalColor.Enabled && EnterLongSignalAlertFilter.Enabled && (bar != _lastEnterLongSignalAlertBar) && (_signals[bar] > 0))
                 {
-                    AddAlert(BuySignalAlertFilter.Value, InstrumentInfo.Instrument, $"BUY SIGNAL: Laguerre RSI leaving oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), BuySignalColor.Value);
-                    _lastBuySignalAlertBar = bar;
+                    AddAlert(EnterLongSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Enter LONG: Laguerre RSI leaving oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), EnterLongSignalColor.Value);
+                    _lastEnterLongSignalAlertBar = bar;
                 }
 
-                if (SellSignalColor.Enabled && SellSignalAlertFilter.Enabled && (bar != _lastSellSignalAlertBar) && (_signals[bar] < 0))
+                if (EnterShortSignalColor.Enabled && EnterShortSignalAlertFilter.Enabled && (bar != _lastEnterShortSignalAlertBar) && (_signals[bar] < 0))
                 {
-                    AddAlert(SellSignalAlertFilter.Value, InstrumentInfo.Instrument, $"SELL SIGNAL: Laguerre RSI leaving overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), SellSignalColor.Value);
-                    _lastSellSignalAlertBar = bar;
+                    AddAlert(EnterShortSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Enter SHORT: Laguerre RSI leaving overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), EnterShortSignalColor.Value);
+                    _lastEnterShortSignalAlertBar = bar;
                 }
             }
         }
@@ -143,28 +143,28 @@ namespace gambcl.ATAS.Indicators
             if (Container is null)
                 return;
 
-            if (!BuySignalColor.Enabled && !SellSignalColor.Enabled)
+            if (!EnterLongSignalColor.Enabled && !EnterShortSignalColor.Enabled)
                 return;
 
-            Color buyColor = BuySignalColor.Value.Convert();
-            Color sellColor = SellSignalColor.Value.Convert();
+            Color enterLongColor = EnterLongSignalColor.Value.Convert();
+            Color enterShortColor = EnterShortSignalColor.Value.Convert();
             int topY = Container.Region.Top;
             int bottomY = Container.Region.Bottom;
             int height = bottomY - topY;
 
             for (int i = FirstVisibleBarNumber; i <= LastVisibleBarNumber; i++)
             {
-                bool buySignal = _signals[i] > 0;
-                bool sellSignal = _signals[i] < 0;
+                bool enterLongSignal = _signals[i] > 0;
+                bool enterShortSignal = _signals[i] < 0;
 
-                if ((buySignal && BuySignalColor.Enabled) || (sellSignal && SellSignalColor.Enabled))
+                if ((enterLongSignal && EnterLongSignalColor.Enabled) || (enterShortSignal && EnterShortSignalColor.Enabled))
                 {
                     int leftX = ChartInfo.GetXByBar(i, true) - 1;
                     int rightX = ChartInfo.GetXByBar(i + 1, true) - 1;
                     int width = (rightX - leftX) - 1;
                     Rectangle signalRect = new Rectangle(leftX, topY, width, height);
 
-                    context.FillRectangle(buySignal ? buyColor : sellColor, signalRect);
+                    context.FillRectangle(enterLongSignal ? enterLongColor : enterShortColor, signalRect);
                 }
             }
         }
