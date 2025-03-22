@@ -433,22 +433,24 @@ namespace gambcl.ATAS.Indicators
             if (Container is null) { return; }
 
             int leftX = ChartInfo.GetXByBar(FirstVisibleBarNumber, true);
-            int rightX = ChartInfo.GetXByBar(LastVisibleBarNumber + 1, true);
-            int width = rightX - leftX;
+            int rightX = ChartInfo.GetXByBar(LastVisibleBarNumber, true);
+            int right1X = ChartInfo.GetXByBar(LastVisibleBarNumber + 1, true);
+            int barWidth = right1X - rightX;
+            int totalWidth = (rightX - leftX) + (barWidth / 2);
             int topY = Container.GetYByValue(100);
             int bottomY = Container.GetYByValue(0);
 
             if (ShowOverboughtRegion.Enabled)
             {
                 int overboughtY = Container.GetYByValue(_overboughtLevel);
-                Rectangle overboughtRect = new Rectangle(leftX, topY, width, overboughtY - topY);
+                Rectangle overboughtRect = new Rectangle(leftX, topY, totalWidth, overboughtY - topY);
                 context.FillRectangle(ShowOverboughtRegion.Value.Convert(), overboughtRect);
             }
 
             if (ShowOversoldRegion.Enabled)
             {
                 int oversoldY = Container.GetYByValue(_oversoldLevel);
-                Rectangle oversoldRect = new Rectangle(leftX, oversoldY, width, bottomY - oversoldY);
+                Rectangle oversoldRect = new Rectangle(leftX, oversoldY, totalWidth, bottomY - oversoldY);
                 context.FillRectangle(ShowOversoldRegion.Value.Convert(), oversoldRect);
             }
         }
