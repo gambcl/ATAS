@@ -115,6 +115,11 @@ namespace gambcl.ATAS.Indicators
                 // Enter SHORT signal
                 _signals[bar] = -1m;
             }
+            else
+            {
+                // No signal
+                _signals[bar] = 0m;
+            }
 
             // Alerts
             if (bar == (CurrentBar - 1) && InstrumentInfo is not null)
