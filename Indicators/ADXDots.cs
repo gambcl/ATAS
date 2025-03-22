@@ -225,11 +225,11 @@ namespace gambcl.ATAS.Indicators
             var adx = _adx[bar];
             _adxSeries[bar] = adx;
             _adxDotsSeries[bar] = _displayLevel;
-            if (adx > _strongTrendThreshold)
+            if (adx >= _strongTrendThreshold)
             {
                 _adxDotsSeries.Colors[bar] = _adxDotsStrongTrendColor;
             }
-            else if (adx > _mediumTrendThreshold)
+            else if (adx >= _mediumTrendThreshold)
             {
                 _adxDotsSeries.Colors[bar] = _adxDotsMediumTrendColor;
             }
