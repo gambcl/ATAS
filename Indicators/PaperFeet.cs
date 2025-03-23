@@ -68,8 +68,8 @@ namespace gambcl.ATAS.Indicators
             EnterLongSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(50).Convert() };
             EnterShortSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(50).Convert() };
 
-            EnterLongSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            EnterShortSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
+            EnterLongSignalAlertFilter = new(true) { Enabled = false, Value = "alert1" };
+            EnterShortSignalAlertFilter = new(true) { Enabled = false, Value = "alert1" };
 
             EnterLongSignalColor.PropertyChanged += OnSignalPropertyChanged;
             EnterShortSignalColor.PropertyChanged += OnSignalPropertyChanged;
