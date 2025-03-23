@@ -1,6 +1,5 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
-using ATAS.Indicators.Technical;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
@@ -15,15 +14,7 @@ namespace gambcl.ATAS.Indicators
 
         public enum MACloudDotsDataSeriesIndexEnum
         {
-            FastMAValueDataSeries,
-            SlowMAValueDataSeries,
             MACloudDotsValueDataSeries
-        }
-
-        public enum MATypeEnum
-        {
-            SMA,
-            EMA
         }
 
         #endregion
@@ -37,27 +28,11 @@ namespace gambcl.ATAS.Indicators
 
         #region Members
 
-        private MATypeEnum _maType = MATypeEnum.EMA;
-        private int _fastPeriod = 9;
-        private int _slowPeriod = 21;
+        private MACloud _maCloud = new();
         private decimal _displayLevel = DefaultDisplayLevel;
         private int _displayWidth = DefaultDisplayWidth;
         private Color _maCloudDotsBullishTrendColor = DefaultColors.Green;
         private Color _maCloudDotsBearishTrendColor = DefaultColors.Red;
-        private SMA _smaFast = new();
-        private SMA _smaSlow = new();
-        private EMA _emaFast = new();
-        private EMA _emaSlow = new();
-        private readonly ValueDataSeries _fastMASeries = new("FastMA", "Fast MA")
-        {
-            VisualType = VisualMode.Hide,
-            IsHidden = true
-        };
-        private readonly ValueDataSeries _slowMASeries = new("SlowMA", "Slow MA")
-        {
-            VisualType = VisualMode.Hide,
-            IsHidden = true
-        };
         private readonly ValueDataSeries _maCloudDotsSeries = new("MACloudDots", "MA Cloud Dots")
         {
             VisualType = VisualMode.Dots,
@@ -76,16 +51,14 @@ namespace gambcl.ATAS.Indicators
 
         [OFT.Attributes.Parameter]
         [Display(Name = "MA Type", GroupName = "Settings", Description = "The type of Moving Average.", Order = 001)]
-        public MATypeEnum MAType
+        public MACloud.MATypeEnum MAType
         {
-            get => _maType;
+            get => _maCloud.MAType;
 
             set
             {
-                _maType = value;
-                _fastMASeries.Name = $"{_fastPeriod} {_maType}";
-                _slowMASeries.Name = $"{_slowPeriod} {_maType}";
-                _maCloudDotsSeries.Name = $"{_maType} Cloud Dots";
+                _maCloud.MAType = value;
+                _maCloudDotsSeries.Name = $"{value} Cloud Dots";
                 RecalculateValues();
             }
         }
@@ -95,14 +68,11 @@ namespace gambcl.ATAS.Indicators
         [Range(1, 1000)]
         public int FastPeriod
         {
-            get => _fastPeriod;
+            get => _maCloud.FastPeriod;
 
             set
             {
-                _fastPeriod = value;
-                _smaFast.Period = value;
-                _emaFast.Period = value;
-                _fastMASeries.Name = $"{_fastPeriod} {_maType}";
+                _maCloud.FastPeriod = value;
                 RecalculateValues();
             }
         }
@@ -112,14 +82,11 @@ namespace gambcl.ATAS.Indicators
         [Range(1, 1000)]
         public int SlowPeriod
         {
-            get => _slowPeriod;
+            get => _maCloud.SlowPeriod;
 
             set
             {
-                _slowPeriod = value;
-                _smaSlow.Period = value;
-                _emaSlow.Period = value;
-                _slowMASeries.Name = $"{_slowPeriod} {_maType}";
+                _maCloud.SlowPeriod = value;
                 RecalculateValues();
             }
         }
@@ -182,18 +149,18 @@ namespace gambcl.ATAS.Indicators
             Panel = IndicatorDataProvider.NewPanel;
 
             // NOTE: The DataSeries must match the order found in MACloudDotsDataSeriesIndexEnum.
-            DataSeries[0] = _fastMASeries;
-            DataSeries.Add(_slowMASeries);
-            DataSeries.Add(_maCloudDotsSeries);
+            DataSeries[0] = _maCloudDotsSeries;
 
             DisplayLevel = DefaultDisplayLevel;
             DisplayWidth = DefaultDisplayWidth;
             BullishTrendColor = DefaultColors.Green;
             BearishTrendColor = DefaultColors.Red;
 
-            MAType = MATypeEnum.EMA;
+            MAType = MACloud.MATypeEnum.EMA;
             FastPeriod = 9;
             SlowPeriod = 21;
+
+            Add(_maCloud);
         }
 
         #endregion
@@ -205,11 +172,6 @@ namespace gambcl.ATAS.Indicators
             base.OnRecalculate();
 
             DataSeries.ForEach(ds => ds.Clear());
-
-            _smaFast = new() { Period = _fastPeriod };
-            _smaSlow = new() { Period = _slowPeriod };
-            _emaFast = new() { Period = _fastPeriod };
-            _emaSlow = new() { Period = _slowPeriod };
         }
 
         protected override void OnCalculate(int bar, decimal value)
@@ -217,23 +179,11 @@ namespace gambcl.ATAS.Indicators
             if (bar == 0)
                 return;
 
-            if (CurrentBar < Math.Max(_fastPeriod, _slowPeriod))
+            if (CurrentBar < Math.Max(_maCloud.FastPeriod, _maCloud.SlowPeriod))
                 return;
 
-            decimal fastValue = 0m;
-            decimal slowValue = 0m;
-            if (MAType == MATypeEnum.EMA)
-            {
-                fastValue = _emaFast.Calculate(bar, value);
-                slowValue = _emaSlow.Calculate(bar, value);
-            }
-            else
-            {
-                fastValue = _smaFast.Calculate(bar, value);
-                slowValue = _smaSlow.Calculate(bar, value);
-            }
-            _fastMASeries[bar] = fastValue;
-            _slowMASeries[bar] = slowValue;
+            decimal fastValue = ((ValueDataSeries)_maCloud.DataSeries[(int)MACloud.MACloudDataSeriesIndexEnum.FastMAValueDataSeries])[bar];
+            decimal slowValue = ((ValueDataSeries)_maCloud.DataSeries[(int)MACloud.MACloudDataSeriesIndexEnum.SlowMAValueDataSeries])[bar];
             _maCloudDotsSeries[bar] = _displayLevel;
             if (fastValue > slowValue)
             {
