@@ -49,14 +49,14 @@ namespace gambcl.ATAS.Indicators
         };
         private readonly ValueDataSeries _fastMASeries = new("FastMA", "Fast MA")
         {
-            VisualType = VisualMode.Line,
+            VisualType = VisualMode.Hide,
             Color = DefaultColors.Green.Convert(),
             Width = 1,
             DrawAbovePrice = false
         };
         private readonly ValueDataSeries _slowMASeries = new("SlowMA", "Slow MA")
         {
-            VisualType = VisualMode.Line,
+            VisualType = VisualMode.Hide,
             Color = DefaultColors.Red.Convert(),
             Width = 1,
             DrawAbovePrice = false
