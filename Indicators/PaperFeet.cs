@@ -65,6 +65,25 @@ namespace gambcl.ATAS.Indicators
             // NOTE: The DataSeries must match the order found in PaperFeetDataSeriesIndexEnum.
             DataSeries.Add(_signals);
 
+            // Initialise LaguerreRSI properties.
+            UseFractalEnergy = true;
+            Alpha = 0.2m;
+            NFE = 8;
+            GLength = 13;
+            BetaDev = 8;
+
+            OverboughtLevel = 80m;
+            OversoldLevel = 20m;
+
+            ShowOverboughtRegion = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(40).Convert() };
+            ShowOversoldRegion = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(40).Convert() };
+
+            EnterOverboughtAlertFilter = new(true) { Enabled = false, Value = "alert1" };
+            ExitOverboughtAlertFilter = new(true) { Enabled = false, Value = "alert1" };
+            EnterOversoldAlertFilter = new(true) { Enabled = false, Value = "alert1" };
+            ExitOversoldAlertFilter = new(true) { Enabled = false, Value = "alert1" };
+
+            // Initialise PaperFeet properties.
             EnterLongSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(50).Convert() };
             EnterShortSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(50).Convert() };
 

@@ -338,6 +338,12 @@ namespace gambcl.ATAS.Indicators
             DataSeries.Add(_reenterShortSeries);
             DataSeries.Add(_exitSeries);
 
+            // Initialise MACloud properties.
+            MAType = MATypeEnum.EMA;
+            FastPeriod = 9;
+            SlowPeriod = 21;
+
+            // Initialise PaperFeet properties.
             UseFractalEnergy = true;
             Alpha = 0.2m;
             NFE = 8;
@@ -431,20 +437,18 @@ namespace gambcl.ATAS.Indicators
             }
 
             // Re-entry signals.
-            decimal emaFast = ((ValueDataSeries)(DataSeries[(int)PaperArmsDataSeriesIndexEnum.FastMAValueDataSeries]))[bar];
-            decimal emaSlow = ((ValueDataSeries)(DataSeries[(int)PaperArmsDataSeriesIndexEnum.SlowMAValueDataSeries]))[bar];
-
+            decimal lrsi = ((ValueDataSeries)(_paperFeet.DataSeries[(int)PaperFeet.PaperFeetDataSeriesIndexEnum.LaguerreRSIValueDataSeries]))[bar];
             int trend0 = haCandleSeries[bar].Close - haCandleSeries[bar].Open >= 0 ? 1 : -1;
             int trend1 = haCandleSeries[bar - 1].Close - haCandleSeries[bar - 1].Open >= 0 ? 1 : -1;
             int trend2 = haCandleSeries[bar - 2].Close - haCandleSeries[bar - 2].Open >= 0 ? 1 : -1;
 
             // Re-enter long - Return to same color trend dot.
-            bool reenterLongSameTrendDot = (emaFast > emaSlow) && (trend0 == 1) && (trend1 == 1) && (trend1 != trend2);
+            bool reenterLongSameTrendDot = (lrsi > 50m) && (trend0 == 1) && (trend1 == 1) && (trend1 != trend2);
             var candle = GetCandle(bar);
+            //this.LogInfo($"BAR {bar}, TIME {candle.Time}, LRSI {lrsi:0.00}, UseFractalEnergy {UseFractalEnergy}");
             if (reenterLongSameTrendDot && ReenterLongSignalColor.Enabled)
             {
                 _reenterLongSeries[bar] = haCandleSeries[bar].Low - (EntrySignalOffset * InstrumentInfo.TickSize);
-                //this.LogInfo($"BAR {bar}, TIME {candle.Time}, EMAFAST {emaFast}, EMASLOW {emaSlow}, trend2 {trend2}, trend1 {trend1}, trend0 {trend0}, series {_reenterLongSeries[bar]}");
             }
             else
             {
@@ -452,17 +456,19 @@ namespace gambcl.ATAS.Indicators
             }
 
             // Re-enter short - Return to same color trend dot.
-            bool reenterShortSameTrendDot = (emaFast < emaSlow) && (trend0 == -1) && (trend1 == -1) && (trend1 != trend2);
+            bool reenterShortSameTrendDot = (lrsi < 50m) && (trend0 == -1) && (trend1 == -1) && (trend1 != trend2);
             if (reenterShortSameTrendDot && ReenterShortSignalColor.Enabled)
             {
                 _reenterShortSeries[bar] = haCandleSeries[bar].High + (EntrySignalOffset * InstrumentInfo.TickSize);
-                //this.LogInfo($"BAR {bar}, TIME {candle.Time}, EMAFAST {emaFast}, EMASLOW {emaSlow}, trend2 {trend2}, trend1 {trend1}, trend0 {trend0}, series {_reenterShortSeries[bar]}");
             }
             else
             {
                 _reenterShortSeries[bar] = 0m;
             }
 
+            // Exit signals.
+            decimal emaFast = ((ValueDataSeries)(DataSeries[(int)PaperArmsDataSeriesIndexEnum.FastMAValueDataSeries]))[bar];
+            decimal emaSlow = ((ValueDataSeries)(DataSeries[(int)PaperArmsDataSeriesIndexEnum.SlowMAValueDataSeries]))[bar];
             // Exit long - Opposite flat top.
             bool exitLongOppositeFlatTop = (emaFast > emaSlow) && (haCandleSeries[bar].Close < haCandleSeries[bar].Open) && (haCandleSeries[bar].High == haCandleSeries[bar].Open);
             // Exit long - Opposite color trend dot.
@@ -500,6 +506,18 @@ namespace gambcl.ATAS.Indicators
             // Alerts
             if (bar == (CurrentBar - 1) && InstrumentInfo is not null)
             {
+                if (EnterLongSignalColor.Enabled && EnterLongSignalAlertFilter.Enabled && (entrySignal > 0) && (bar != _lastEnterLongSignalAlertBar))
+                {
+                    AddAlert(EnterLongSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Enter LONG: Laguerre RSI leaving oversold region {_paperFeet[bar]:0.#}", DefaultColors.Black.Convert(), EnterLongSignalColor.Value);
+                    _lastEnterLongSignalAlertBar = bar;
+                }
+
+                if (EnterShortSignalColor.Enabled && EnterShortSignalAlertFilter.Enabled && (entrySignal < 0) && (bar != _lastEnterShortSignalAlertBar))
+                {
+                    AddAlert(EnterShortSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Enter SHORT: Laguerre RSI leaving overbought region {_paperFeet[bar]:0.#}", DefaultColors.Black.Convert(), EnterShortSignalColor.Value);
+                    _lastEnterShortSignalAlertBar = bar;
+                }
+
                 if (ReenterLongSignalColor.Enabled && ReenterLongSignalAlertFilter.Enabled && reenterLongSameTrendDot && (bar != _lastReenterLongSignalAlertBar))
                 {
                     AddAlert(ReenterLongSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Re-enter LONG: Trend returning to bullish", DefaultColors.Black.Convert(), ReenterLongSignalColor.Value);
