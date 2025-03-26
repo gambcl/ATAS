@@ -1,5 +1,6 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
+using OFT.Rendering.Context;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
@@ -43,6 +44,8 @@ namespace gambcl.ATAS.Indicators
 
         #region Members
 
+        private bool _dummyValue = false;
+        private bool _forceRecalculate = false;
         private gambcl.ATAS.Indicators.HeikenAshi _ha = new();
         private gambcl.ATAS.Indicators.PaperFeet _paperFeet = new();
         private readonly ValueDataSeries _enterLongSeries = new("EnterLong")
@@ -118,6 +121,19 @@ namespace gambcl.ATAS.Indicators
         #endregion
 
         #region Properties
+
+        [OFT.Attributes.Parameter]
+        [Display(Name = "Toggle to Recalculate", GroupName = "Settings", Order = 000)]
+        public bool ToggleToRecalculate
+        {
+            get => _dummyValue;
+
+            set
+            {
+                _dummyValue = value;
+                RecalculateValues();
+            }
+        }
 
         [OFT.Attributes.Parameter]
         [Display(Name = "Use Fractal Energy", GroupName = "LRSI - Settings", Order = 101)]
@@ -330,6 +346,8 @@ namespace gambcl.ATAS.Indicators
         public PaperArms()
         {
             DenyToChangePanel = true;
+            EnableCustomDrawing = true;
+            SubscribeToDrawingEvents(DrawingLayouts.LatestBar);
 
             // NOTE: The DataSeries must match the order found in PaperArmsDataSeriesIndexEnum.
             DataSeries.Add(_enterLongSeries);
@@ -394,6 +412,13 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
+            // Work around a bug in ATAS where the child indicators do not seem to get recalculated.
+            _forceRecalculate = true;
+        }
+
         protected override void OnRecalculate()
         {
             base.OnRecalculate();
@@ -445,7 +470,7 @@ namespace gambcl.ATAS.Indicators
             // Re-enter long - Return to same color trend dot.
             bool reenterLongSameTrendDot = (lrsi > 50m) && (trend0 == 1) && (trend1 == 1) && (trend1 != trend2);
             var candle = GetCandle(bar);
-            //this.LogInfo($"BAR {bar}, TIME {candle.Time}, LRSI {lrsi:0.00}, UseFractalEnergy {UseFractalEnergy}");
+            //this.LogInfo($"BAR {bar}, TIME {candle.Time}, LRSI {lrsi:0.00}");
             if (reenterLongSameTrendDot && ReenterLongSignalColor.Enabled)
             {
                 _reenterLongSeries[bar] = haCandleSeries[bar].Low - (EntrySignalOffset * InstrumentInfo.TickSize);
@@ -553,6 +578,22 @@ namespace gambcl.ATAS.Indicators
                     AddAlert(ExitShortOppTrendDotSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Exit SHORT: Opposite trend dot", DefaultColors.Black.Convert(), ExitShortOppTrendDotSignalColor.Value);
                     _lastExitShortOppTrendDotSignalAlertBar = bar;
                 }
+            }
+        }
+
+        protected override void OnRender(RenderContext context, DrawingLayouts layout)
+        {
+            base.OnRender(context, layout);
+
+            // Work around a bug in ATAS where the child indicators do not seem to get recalculated.
+            if (_forceRecalculate)
+            {
+                DoActionInGuiThread(() =>
+                {
+                    this.LogInfo("Forcing child indicators to recalculate");
+                    ToggleToRecalculate = !ToggleToRecalculate;
+                });
+                _forceRecalculate = false;
             }
         }
 
