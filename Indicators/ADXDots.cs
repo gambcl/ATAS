@@ -1,6 +1,8 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
 using ATAS.Indicators.Technical;
+using OFT.Rendering.Context;
+using OFT.Rendering.Tools;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
@@ -60,6 +62,7 @@ namespace gambcl.ATAS.Indicators
             DrawAbovePrice = false,
             IsHidden = true
         };
+        private bool _showLabel;
 
         #endregion
 
@@ -178,6 +181,18 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
+        [Display(Name = "Show Label", GroupName = "Display", Order = 108)]
+        public bool ShowLabel
+        {
+            get => _showLabel;
+
+            set
+            {
+                _showLabel = value;
+                RecalculateValues();
+            }
+        }
+
         #endregion
 
         #region Constructor
@@ -185,6 +200,8 @@ namespace gambcl.ATAS.Indicators
         public ADXDots() : base(true)
         {
             Panel = IndicatorDataProvider.NewPanel;
+            EnableCustomDrawing = true;
+            SubscribeToDrawingEvents(DrawingLayouts.LatestBar);
 
             // NOTE: The DataSeries must match the order found in ADXDotsDataSeriesIndexEnum.
             DataSeries[0] = _adxSeries;
@@ -199,6 +216,7 @@ namespace gambcl.ATAS.Indicators
             WeakTrendColor = Color.FromArgb(255, 225, 190, 231);
             MediumTrendColor = Color.FromArgb(255, 186, 104, 200);
             StrongTrendColor = Color.FromArgb(255, 123, 31, 162);
+            ShowLabel = true;
 
             Add(_adx);
         }
@@ -236,6 +254,22 @@ namespace gambcl.ATAS.Indicators
             else
             {
                 _adxDotsSeries.Colors[bar] = _adxDotsWeakTrendColor;
+            }
+        }
+
+        protected override void OnRender(RenderContext context, DrawingLayouts layout)
+        {
+            base.OnRender(context, layout);
+
+            if (ChartInfo is null) { return; }
+            if (Container is null) { return; }
+
+            if (ShowLabel)
+            {
+                var text = "ADX";
+                var font = new RenderFont("Arial", 9);
+                var textSize = context.MeasureString(text, font);
+                context.DrawString(text, font, Color.Gray, ChartInfo.GetXByBar(CurrentBar + 1, true), Container.GetYByValue(DisplayLevel) - (textSize.Height / 2));
             }
         }
 

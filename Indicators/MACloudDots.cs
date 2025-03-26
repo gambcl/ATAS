@@ -1,5 +1,7 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
+using OFT.Rendering.Context;
+using OFT.Rendering.Tools;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
@@ -44,6 +46,7 @@ namespace gambcl.ATAS.Indicators
             DrawAbovePrice = false,
             IsHidden = true
         };
+        private bool _showLabel;
 
         #endregion
 
@@ -140,6 +143,18 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
+        [Display(Name = "Show Label", GroupName = "Display", Order = 105)]
+        public bool ShowLabel
+        {
+            get => _showLabel;
+
+            set
+            {
+                _showLabel = value;
+                RecalculateValues();
+            }
+        }
+
         #endregion
 
         #region Constructor
@@ -147,6 +162,8 @@ namespace gambcl.ATAS.Indicators
         public MACloudDots()
         {
             Panel = IndicatorDataProvider.NewPanel;
+            EnableCustomDrawing = true;
+            SubscribeToDrawingEvents(DrawingLayouts.LatestBar);
 
             // NOTE: The DataSeries must match the order found in MACloudDotsDataSeriesIndexEnum.
             DataSeries[0] = _maCloudDotsSeries;
@@ -155,6 +172,7 @@ namespace gambcl.ATAS.Indicators
             DisplayWidth = DefaultDisplayWidth;
             BullishTrendColor = DefaultColors.Green;
             BearishTrendColor = DefaultColors.Red;
+            ShowLabel = true;
 
             MAType = MACloud.MATypeEnum.EMA;
             FastPeriod = 9;
@@ -196,6 +214,22 @@ namespace gambcl.ATAS.Indicators
             else
             {
                 _maCloudDotsSeries.Colors[bar] = Color.Transparent;
+            }
+        }
+
+        protected override void OnRender(RenderContext context, DrawingLayouts layout)
+        {
+            base.OnRender(context, layout);
+
+            if (ChartInfo is null) { return; }
+            if (Container is null) { return; }
+
+            if (ShowLabel)
+            {
+                var text = _maCloud.MAType + " Cloud";
+                var font = new RenderFont("Arial", 9);
+                var textSize = context.MeasureString(text, font);
+                context.DrawString(text, font, Color.Gray, ChartInfo.GetXByBar(CurrentBar + 1, true), Container.GetYByValue(DisplayLevel) - (textSize.Height / 2));
             }
         }
 
