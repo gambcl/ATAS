@@ -5,6 +5,7 @@ using OFT.Rendering.Tools;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
+using Utils.Common.Logging;
 
 namespace gambcl.ATAS.Indicators
 {
@@ -30,6 +31,8 @@ namespace gambcl.ATAS.Indicators
 
         #region Members
 
+        private bool _dummyValue = false;
+        private bool _forceRecalculate = false;
         private MACloud _maCloud = new();
         private decimal _displayLevel = DefaultDisplayLevel;
         private int _displayWidth = DefaultDisplayWidth;
@@ -51,6 +54,19 @@ namespace gambcl.ATAS.Indicators
         #endregion
 
         #region Properties
+
+        [OFT.Attributes.Parameter]
+        [Display(Name = "Toggle to Recalculate", GroupName = "Settings", Order = 000)]
+        public bool ToggleToRecalculate
+        {
+            get => _dummyValue;
+
+            set
+            {
+                _dummyValue = value;
+                RecalculateValues();
+            }
+        }
 
         [OFT.Attributes.Parameter]
         [Display(Name = "MA Type", GroupName = "Settings", Description = "The type of Moving Average.", Order = 001)]
@@ -185,6 +201,13 @@ namespace gambcl.ATAS.Indicators
 
         #region Indicator methods
 
+        protected override void OnInitialize()
+        {
+            base.OnInitialize();
+            // Work around a bug in ATAS where the child indicators do not seem to get recalculated.
+            _forceRecalculate = true;
+        }
+
         protected override void OnRecalculate()
         {
             base.OnRecalculate();
@@ -230,6 +253,17 @@ namespace gambcl.ATAS.Indicators
                 var font = new RenderFont("Arial", 9);
                 var textSize = context.MeasureString(text, font);
                 context.DrawString(text, font, Color.Gray, ChartInfo.GetXByBar(CurrentBar + 1, true), Container.GetYByValue(DisplayLevel) - (textSize.Height / 2));
+            }
+
+            // Work around a bug in ATAS where the child indicators do not seem to get recalculated.
+            if (_forceRecalculate)
+            {
+                DoActionInGuiThread(() =>
+                {
+                    this.LogInfo("Forcing child indicators to recalculate");
+                    ToggleToRecalculate = !ToggleToRecalculate;
+                });
+                _forceRecalculate = false;
             }
         }
 

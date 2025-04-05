@@ -1,5 +1,6 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
+using gambcl.ATAS.Indicators.Helpers;
 using OFT.Rendering.Context;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -93,11 +94,7 @@ namespace gambcl.ATAS.Indicators
             IgnoredByAlerts = true
         };
 
-        private decimal _lastValue = 0m;
-        private int _lastEnterOverboughtAlert = 0;
-        private int _lastExitOverboughtAlert = 0;
-        private int _lastEnterOversoldAlert = 0;
-        private int _lastExitOversoldAlert = 0;
+        private int _lastBar = 0;
 
         private IPropertiesEditor? _propertiesEditor;
 
@@ -222,6 +219,9 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Exit Oversold", GroupName = "Alerts", Description = "When enabled, an alert is triggered by the Laguerre RSI leaving the oversold region, using the specified sound file.", Order = 404)]
         public FilterString ExitOversoldAlertFilter { get; set; }
 
+        [Display(Name = "Alert Sounds Path", GroupName = "Alerts", Description = "Location of alert audio files.", Order = 405)]
+        public string AlertSoundsPath { get; set; }
+
         #endregion
 
         #region Constructor
@@ -256,10 +256,11 @@ namespace gambcl.ATAS.Indicators
             ShowOverboughtRegion = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(40).Convert() };
             ShowOversoldRegion = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(40).Convert() };
 
-            EnterOverboughtAlertFilter = new(true) { Value = "alert1" };
-            ExitOverboughtAlertFilter = new(true) { Value = "alert1" };
-            EnterOversoldAlertFilter = new(true) { Value = "alert1" };
-            ExitOversoldAlertFilter = new(true) { Value = "alert1" };
+            EnterOverboughtAlertFilter = new(true) { Value = "RSIOverbought.wav" };
+            ExitOverboughtAlertFilter = new(true) { Value = "RSILeavingOverbought.wav" };
+            EnterOversoldAlertFilter = new(true) { Value = "RSIOversold.wav" };
+            ExitOversoldAlertFilter = new(true) { Value = "RSILeavingOversold.wav" };
+            AlertSoundsPath = SoundPackHelper.DefaultAlertFilePath();
         }
 
         #endregion
@@ -383,46 +384,46 @@ namespace gambcl.ATAS.Indicators
 
             // Alerts
 
-            if (bar == CurrentBar - 1)
+            if ((_lastBar != bar) && (bar == CurrentBar - 1))
             {
                 if (EnterOverboughtAlertFilter.Enabled)
                 {
-                    if ((_lastValue < _overboughtLevel && this[bar] >= _overboughtLevel) && _lastEnterOverboughtAlert != bar)
+                    if ((this[bar - 2] < _overboughtLevel && this[bar - 1] >= _overboughtLevel))
                     {
-                        AddAlert(EnterOverboughtAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI entering overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), ShowOverboughtRegion.Value);
-                        _lastEnterOverboughtAlert = bar;
+                        string audioFile = SoundPackHelper.ResolveAlertFilePath(EnterOverboughtAlertFilter.Value, AlertSoundsPath);
+                        AddAlert(audioFile, InstrumentInfo.Instrument, $"Laguerre RSI entered overbought region {this[bar - 1]:0.#####}", DefaultColors.Black.Convert(), ShowOverboughtRegion.Value);
                     }
                 }
 
                 if (ExitOverboughtAlertFilter.Enabled)
                 {
-                    if ((_lastValue >= _overboughtLevel && this[bar] < _overboughtLevel) && _lastExitOverboughtAlert != bar)
+                    if ((this[bar - 2] >= _overboughtLevel && this[bar - 1] < _overboughtLevel))
                     {
-                        AddAlert(ExitOverboughtAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI leaving overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), ShowOverboughtRegion.Value);
-                        _lastExitOverboughtAlert = bar;
+                        string audioFile = SoundPackHelper.ResolveAlertFilePath(ExitOverboughtAlertFilter.Value, AlertSoundsPath);
+                        AddAlert(audioFile, InstrumentInfo.Instrument, $"Laguerre RSI exited overbought region {this[bar - 1]:0.#####}", DefaultColors.Black.Convert(), ShowOverboughtRegion.Value);
                     }
                 }
 
                 if (EnterOversoldAlertFilter.Enabled)
                 {
-                    if ((_lastValue > _oversoldLevel && this[bar] <= _oversoldLevel) && _lastEnterOversoldAlert != bar)
+                    if ((this[bar - 2] > _oversoldLevel && this[bar - 1] <= _oversoldLevel))
                     {
-                        AddAlert(EnterOversoldAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI entering oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), ShowOversoldRegion.Value);
-                        _lastEnterOversoldAlert = bar;
+                        string audioFile = SoundPackHelper.ResolveAlertFilePath(EnterOversoldAlertFilter.Value, AlertSoundsPath);
+                        AddAlert(audioFile, InstrumentInfo.Instrument, $"Laguerre RSI entered oversold region {this[bar - 1]:0.#####}", DefaultColors.Black.Convert(), ShowOversoldRegion.Value);
                     }
                 }
 
                 if (ExitOversoldAlertFilter.Enabled)
                 {
-                    if ((_lastValue <= _oversoldLevel && this[bar] > _oversoldLevel) && _lastExitOversoldAlert != bar)
+                    if ((this[bar - 2] <= _oversoldLevel && this[bar - 1] > _oversoldLevel))
                     {
-                        AddAlert(ExitOversoldAlertFilter.Value, InstrumentInfo.Instrument, $"Laguerre RSI leaving oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), ShowOversoldRegion.Value);
-                        _lastExitOversoldAlert = bar;
+                        string audioFile = SoundPackHelper.ResolveAlertFilePath(ExitOversoldAlertFilter.Value, AlertSoundsPath);
+                        AddAlert(audioFile, InstrumentInfo.Instrument, $"Laguerre RSI exited oversold region {this[bar - 1]:0.#####}", DefaultColors.Black.Convert(), ShowOversoldRegion.Value);
                     }
                 }
             }
 
-            _lastValue = this[bar];
+            _lastBar = bar;
         }
 
         protected override void OnRender(RenderContext context, DrawingLayouts layout)

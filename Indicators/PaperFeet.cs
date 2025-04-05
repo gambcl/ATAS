@@ -1,5 +1,6 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
+using gambcl.ATAS.Indicators.Helpers;
 using OFT.Rendering.Context;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -32,13 +33,12 @@ namespace gambcl.ATAS.Indicators
         #region Members
 
         private bool _isRsiInitialized = false;
-        private int _lastEnterLongSignalAlertBar = 0;
-        private int _lastEnterShortSignalAlertBar = 0;
         private readonly ValueDataSeries _signals = new("Signals")
         {
             VisualType = VisualMode.Hide,
             IsHidden = true
         };
+        private int _lastBar = 0;
 
         #endregion
 
@@ -78,17 +78,18 @@ namespace gambcl.ATAS.Indicators
             ShowOverboughtRegion = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(40).Convert() };
             ShowOversoldRegion = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(40).Convert() };
 
-            EnterOverboughtAlertFilter = new(true) { Enabled = false, Value = "alert1" };
-            ExitOverboughtAlertFilter = new(true) { Enabled = false, Value = "alert1" };
-            EnterOversoldAlertFilter = new(true) { Enabled = false, Value = "alert1" };
-            ExitOversoldAlertFilter = new(true) { Enabled = false, Value = "alert1" };
+            EnterOverboughtAlertFilter = new(true) { Enabled = false, Value = "RSIOverbought.wav" };
+            ExitOverboughtAlertFilter = new(true) { Enabled = false, Value = "RSILeavingOverbought.wav" };
+            EnterOversoldAlertFilter = new(true) { Enabled = false, Value = "RSIOversold.wav" };
+            ExitOversoldAlertFilter = new(true) { Enabled = false, Value = "RSILeavingOversold.wav" };
+            AlertSoundsPath = SoundPackHelper.DefaultAlertFilePath();
 
             // Initialise PaperFeet properties.
             EnterLongSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.GetWithTransparency(50).Convert() };
             EnterShortSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.GetWithTransparency(50).Convert() };
 
-            EnterLongSignalAlertFilter = new(true) { Enabled = false, Value = "alert1" };
-            EnterShortSignalAlertFilter = new(true) { Enabled = false, Value = "alert1" };
+            EnterLongSignalAlertFilter = new(true) { Enabled = false, Value = "LongEntry.wav" };
+            EnterShortSignalAlertFilter = new(true) { Enabled = false, Value = "ShortEntry.wav" };
 
             EnterLongSignalColor.PropertyChanged += OnSignalPropertyChanged;
             EnterShortSignalColor.PropertyChanged += OnSignalPropertyChanged;
@@ -141,20 +142,22 @@ namespace gambcl.ATAS.Indicators
             }
 
             // Alerts
-            if (bar == (CurrentBar - 1) && InstrumentInfo is not null)
+            if ((_lastBar != bar) && (bar == (CurrentBar - 1)) && InstrumentInfo is not null)
             {
-                if (EnterLongSignalColor.Enabled && EnterLongSignalAlertFilter.Enabled && (bar != _lastEnterLongSignalAlertBar) && (_signals[bar] > 0))
+                if (EnterLongSignalColor.Enabled && EnterLongSignalAlertFilter.Enabled && (_signals[bar - 1] > 0))
                 {
-                    AddAlert(EnterLongSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Enter LONG: Laguerre RSI leaving oversold region {this[bar]:0.#####}", DefaultColors.Black.Convert(), EnterLongSignalColor.Value);
-                    _lastEnterLongSignalAlertBar = bar;
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(EnterLongSignalAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"Enter LONG: Laguerre RSI exited oversold region {this[bar - 1]:0.#####}", DefaultColors.Black.Convert(), EnterLongSignalColor.Value);
                 }
 
-                if (EnterShortSignalColor.Enabled && EnterShortSignalAlertFilter.Enabled && (bar != _lastEnterShortSignalAlertBar) && (_signals[bar] < 0))
+                if (EnterShortSignalColor.Enabled && EnterShortSignalAlertFilter.Enabled && (_signals[bar - 1] < 0))
                 {
-                    AddAlert(EnterShortSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Enter SHORT: Laguerre RSI leaving overbought region {this[bar]:0.#####}", DefaultColors.Black.Convert(), EnterShortSignalColor.Value);
-                    _lastEnterShortSignalAlertBar = bar;
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(EnterShortSignalAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"Enter SHORT: Laguerre RSI exited overbought region {this[bar - 1]:0.#####}", DefaultColors.Black.Convert(), EnterShortSignalColor.Value);
                 }
             }
+
+            _lastBar = bar;
         }
 
         protected override void OnRender(RenderContext context, DrawingLayouts layout)

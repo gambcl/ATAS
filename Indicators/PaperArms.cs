@@ -1,5 +1,6 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
+using gambcl.ATAS.Indicators.Helpers;
 using OFT.Rendering.Context;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -107,14 +108,7 @@ namespace gambcl.ATAS.Indicators
         private int _entrySignalOffset = DefaultEntrySignalOffset;
         private int _exitSignalWidth = DefaultExitSignalWidth;
         private int _exitSignalOffset = DefaultExitSignalOffset;
-        private int _lastEnterLongSignalAlertBar = 0;
-        private int _lastEnterShortSignalAlertBar = 0;
-        private int _lastReenterLongSignalAlertBar = 0;
-        private int _lastReenterShortSignalAlertBar = 0;
-        private int _lastExitLongOppFlatTopSignalAlertBar = 0;
-        private int _lastExitShortOppFlatBottomSignalAlertBar = 0;
-        private int _lastExitLongOppTrendDotSignalAlertBar = 0;
-        private int _lastExitShortOppTrendDotSignalAlertBar = 0;
+        private int _lastBar = 0;
 
         private IPropertiesEditor? _propertiesEditor;
 
@@ -136,7 +130,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "Use Fractal Energy", GroupName = "LRSI - Settings", Order = 101)]
+        [Display(Name = "Use Fractal Energy", GroupName = "LRSI - Settings", Order = 2001)]
         public bool UseFractalEnergy
         {
             get => _paperFeet.UseFractalEnergy;
@@ -151,7 +145,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "Alpha", GroupName = "LRSI - Laguerre RSI", Order = 201)]
+        [Display(Name = "Alpha", GroupName = "LRSI - Laguerre RSI", Order = 2101)]
         [Range(0, 1)]
         public decimal Alpha
         {
@@ -165,7 +159,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "NFE", GroupName = "LRSI - Laguerre RSI with Fractal Energy", Description = "Number of bars used in Fractal Energy calculations.", Order = 301)]
+        [Display(Name = "NFE", GroupName = "LRSI - Laguerre RSI with Fractal Energy", Description = "Number of bars used in Fractal Energy calculations.", Order = 2201)]
         [Range(1, Int32.MaxValue)]
         public int NFE
         {
@@ -179,7 +173,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "GLength", GroupName = "LRSI - Laguerre RSI with Fractal Energy", Description = "Period length for Go/Gh/Gl/Gc filter.", Order = 302)]
+        [Display(Name = "GLength", GroupName = "LRSI - Laguerre RSI with Fractal Energy", Description = "Period length for Go/Gh/Gl/Gc filter.", Order = 2202)]
         [Range(1, Int32.MaxValue)]
         public int GLength
         {
@@ -193,7 +187,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "BetaDev", GroupName = "LRSI - Laguerre RSI with Fractal Energy", Description = "Controls reactivity in alpha/beta computations.", Order = 303)]
+        [Display(Name = "BetaDev", GroupName = "LRSI - Laguerre RSI with Fractal Energy", Description = "Controls reactivity in alpha/beta computations.", Order = 2203)]
         [Range(1, Int32.MaxValue)]
         public int BetaDev
         {
@@ -207,7 +201,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "Overbought Level", GroupName = "LRSI - Thresholds", Order = 401)]
+        [Display(Name = "Overbought Level", GroupName = "LRSI - Thresholds", Order = 2301)]
         [Range(0, 100)]
         public decimal OverboughtLevel
         {
@@ -221,7 +215,7 @@ namespace gambcl.ATAS.Indicators
         }
 
         [OFT.Attributes.Parameter]
-        [Display(Name = "Oversold Level", GroupName = "LRSI - Thresholds", Order = 402)]
+        [Display(Name = "Oversold Level", GroupName = "LRSI - Thresholds", Order = 2302)]
         [Range(0, 100)]
         public decimal OversoldLevel
         {
@@ -234,19 +228,19 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
-        [Display(Name = "Enter LONG", GroupName = "Entry Signals", Description = "When enabled, LONG entry signals will be highlighted in the specified color.", Order = 501)]
+        [Display(Name = "Enter LONG", GroupName = "Entry Signals", Description = "When enabled, LONG entry signals will be highlighted in the specified color.", Order = 101)]
         public FilterColor EnterLongSignalColor { get; set; }
 
-        [Display(Name = "Enter SHORT", GroupName = "Entry Signals", Description = "When enabled, SHORT entry signals will be highlighted in the specified color.", Order = 502)]
+        [Display(Name = "Enter SHORT", GroupName = "Entry Signals", Description = "When enabled, SHORT entry signals will be highlighted in the specified color.", Order = 102)]
         public FilterColor EnterShortSignalColor { get; set; }
 
-        [Display(Name = "Re-enter LONG", GroupName = "Entry Signals", Description = "When enabled, LONG re-entry signals will be highlighted in the specified color.", Order = 503)]
+        [Display(Name = "Re-enter LONG", GroupName = "Entry Signals", Description = "When enabled, LONG re-entry signals will be highlighted in the specified color.", Order = 103)]
         public FilterColor ReenterLongSignalColor {  get; set; }
 
-        [Display(Name = "Re-enter SHORT", GroupName = "Entry Signals", Description = "When enabled, SHORT re-entry signals will be highlighted in the specified color.", Order = 504)]
+        [Display(Name = "Re-enter SHORT", GroupName = "Entry Signals", Description = "When enabled, SHORT re-entry signals will be highlighted in the specified color.", Order = 104)]
         public FilterColor ReenterShortSignalColor { get; set; }
 
-        [Display(Name = "Signal Width", GroupName = "Entry Signals", Description = "Controls the size of the entry signals on the chart.", Order = 505)]
+        [Display(Name = "Signal Width", GroupName = "Entry Signals", Description = "Controls the size of the entry signals on the chart.", Order = 105)]
         [Range(1, 1000)]
         public int EntrySignalWidth
         {
@@ -263,7 +257,7 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
-        [Display(Name = "Signal Offset", GroupName = "Entry Signals", Description = "The vertical offset between entry signal and bar.", Order = 506)]
+        [Display(Name = "Signal Offset", GroupName = "Entry Signals", Description = "The vertical offset between entry signal and bar.", Order = 106)]
         [Range(0, 1000)]
         public int EntrySignalOffset
         {
@@ -276,19 +270,13 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
-        [Display(Name = "Exit LONG - Opposite Flat Top", GroupName = "Exit Signals", Description = "When enabled, LONG exit signals (due to opposite HA candle with flat top) will be highlighted in the specified color.", Order = 601)]
-        public FilterColor ExitLongOppFlatTopSignalColor { get; set; }
+        [Display(Name = "Exit LONG", GroupName = "Exit Signals", Description = "When enabled, LONG exit signals will be highlighted in the specified color.", Order = 201)]
+        public FilterColor ExitLongSignalColor { get; set; }
 
-        [Display(Name = "Exit LONG - Opposite Trend Dot", GroupName = "Exit Signals", Description = "When enabled, LONG exit signals (due to opposite trend dot) will be highlighted in the specified color.", Order = 602)]
-        public FilterColor ExitLongOppTrendDotSignalColor { get; set; }
+        [Display(Name = "Exit SHORT", GroupName = "Exit Signals", Description = "When enabled, SHORT exit signals will be highlighted in the specified color.", Order = 202)]
+        public FilterColor ExitShortSignalColor { get; set; }
 
-        [Display(Name = "Exit SHORT - Opposite Flat Bottom", GroupName = "Exit Signals", Description = "When enabled, SHORT exit signals (due to opposite HA candle with flat bottom) will be highlighted in the specified color.", Order = 603)]
-        public FilterColor ExitShortOppFlatBottomSignalColor { get; set; }
-
-        [Display(Name = "Exit SHORT - Opposite Trend Dot", GroupName = "Exit Signals", Description = "When enabled, SHORT exit signals (due to opposite trend dot) will be highlighted in the specified color.", Order = 604)]
-        public FilterColor ExitShortOppTrendDotSignalColor { get; set; }
-
-        [Display(Name = "Signal Width", GroupName = "Exit Signals", Description = "Controls the size of the exit signals on the chart.", Order = 605)]
+        [Display(Name = "Signal Width", GroupName = "Exit Signals", Description = "Controls the size of the exit signals on the chart.", Order = 203)]
         [Range(1, 1000)]
         public int ExitSignalWidth
         {
@@ -302,7 +290,7 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
-        [Display(Name = "Signal Offset", GroupName = "Exit Signals", Description = "The vertical offset between exit signal and bar.", Order = 606)]
+        [Display(Name = "Signal Offset", GroupName = "Exit Signals", Description = "The vertical offset between exit signal and bar.", Order = 204)]
         [Range(0, 1000)]
         public int ExitSignalOffset
         {
@@ -315,29 +303,23 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
-        [Display(Name = "Enter LONG", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a LONG entry signal, using the specified sound file.", Order = 701)]
+        [Display(Name = "Enter LONG", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a LONG entry signal, using the specified sound file.", Order = 301)]
         public FilterString EnterLongSignalAlertFilter { get; set; }
 
-        [Display(Name = "Enter SHORT", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a SHORT entry signal, using the specified sound file.", Order = 702)]
+        [Display(Name = "Enter SHORT", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a SHORT entry signal, using the specified sound file.", Order = 302)]
         public FilterString EnterShortSignalAlertFilter { get; set; }
 
-        [Display(Name = "Re-enter LONG", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a LONG re-entry signal, using the specified sound file.", Order = 703)]
+        [Display(Name = "Re-enter LONG", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a LONG re-entry signal, using the specified sound file.", Order = 303)]
         public FilterString ReenterLongSignalAlertFilter { get; set; }
 
-        [Display(Name = "Re-enter SHORT", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a SHORT re-entry signal, using the specified sound file.", Order = 704)]
+        [Display(Name = "Re-enter SHORT", GroupName = "Alerts", Description = "When enabled, an alert is triggered by a SHORT re-entry signal, using the specified sound file.", Order = 304)]
         public FilterString ReenterShortSignalAlertFilter { get; set; }
 
-        [Display(Name = "Exit LONG - Opposite Flat Top", GroupName = "Alerts", Description = "When enabled, an alert is triggered by an exit LONG signal (due to opposite HA candle with flat top), using the specified sound file.", Order = 705)]
-        public FilterString ExitLongOppFlatTopSignalAlertFilter { get; set; }
+        [Display(Name = "Exit LONG", GroupName = "Alerts", Description = "When enabled, an alert is triggered by an exit LONG signal, using the specified sound file.", Order = 305)]
+        public FilterString ExitLongSignalAlertFilter { get; set; }
 
-        [Display(Name = "Exit LONG - Opposite Trend Dot", GroupName = "Alerts", Description = "When enabled, an alert is triggered by an exit LONG signal (due to opposite trend dot), using the specified sound file.", Order = 706)]
-        public FilterString ExitLongOppTrendDotSignalAlertFilter { get; set; }
-
-        [Display(Name = "Exit SHORT - Opposite Flat Bottom", GroupName = "Alerts", Description = "When enabled, an alert is triggered by an exit SHORT signal (due to opposite HA candle with flat bottom), using the specified sound file.", Order = 707)]
-        public FilterString ExitShortOppFlatBottomSignalAlertFilter { get; set; }
-
-        [Display(Name = "Exit SHORT - Opposite Trend Dot", GroupName = "Alerts", Description = "When enabled, an alert is triggered by an exit SHORT signal (due to opposite trend dot), using the specified sound file.", Order = 708)]
-        public FilterString ExitShortOppTrendDotSignalAlertFilter { get; set; }
+        [Display(Name = "Exit SHORT", GroupName = "Alerts", Description = "When enabled, an alert is triggered by an exit SHORT signal, using the specified sound file.", Order = 306)]
+        public FilterString ExitShortSignalAlertFilter { get; set; }
 
         #endregion
 
@@ -378,31 +360,26 @@ namespace gambcl.ATAS.Indicators
             EntrySignalWidth = DefaultEntrySignalWidth;
             EntrySignalOffset = DefaultEntrySignalOffset;
 
-            ExitLongOppFlatTopSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.Convert() };
-            ExitLongOppTrendDotSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.Convert() };
-            ExitShortOppFlatBottomSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.Convert() };
-            ExitShortOppTrendDotSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.Convert() };
+            ExitLongSignalColor = new(true) { Enabled = true, Value = DefaultColors.Green.Convert() };
+            ExitShortSignalColor = new(true) { Enabled = true, Value = DefaultColors.Red.Convert() };
             ExitSignalWidth = DefaultExitSignalWidth;
             ExitSignalOffset = DefaultExitSignalOffset;
 
-            EnterLongSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            EnterShortSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            ReenterLongSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            ReenterShortSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            ExitLongOppFlatTopSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            ExitLongOppTrendDotSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            ExitShortOppFlatBottomSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
-            ExitShortOppTrendDotSignalAlertFilter = new(true) { Enabled = true, Value = "alert1" };
+            EnterLongSignalAlertFilter = new(true) { Enabled = true, Value = "LongEntry.wav" };
+            EnterShortSignalAlertFilter = new(true) { Enabled = true, Value = "ShortEntry.wav" };
+            ReenterLongSignalAlertFilter = new(true) { Enabled = true, Value = "LongEntry.wav" };
+            ReenterShortSignalAlertFilter = new(true) { Enabled = true, Value = "ShortEntry.wav" };
+            ExitLongSignalAlertFilter = new(true) { Enabled = true, Value = "ExitLong.wav" };
+            ExitShortSignalAlertFilter = new(true) { Enabled = true, Value = "ExitShort.wav" };
+            AlertSoundsPath = SoundPackHelper.DefaultAlertFilePath();
 
             EnterLongSignalColor.PropertyChanged += EnterLongSignalFilterPropertyChanged;
             EnterShortSignalColor.PropertyChanged += EnterShortSignalFilterPropertyChanged;
             ReenterLongSignalColor.PropertyChanged += ReenterLongSignalFilterPropertyChanged;
             ReenterShortSignalColor.PropertyChanged += ReenterShortSignalFilterPropertyChanged;
 
-            ExitLongOppFlatTopSignalColor.PropertyChanged += ExitSignalFilterPropertyChanged;
-            ExitLongOppTrendDotSignalColor.PropertyChanged += ExitSignalFilterPropertyChanged;
-            ExitShortOppFlatBottomSignalColor.PropertyChanged += ExitSignalFilterPropertyChanged;
-            ExitShortOppTrendDotSignalColor.PropertyChanged += ExitSignalFilterPropertyChanged;
+            ExitLongSignalColor.PropertyChanged += ExitSignalFilterPropertyChanged;
+            ExitShortSignalColor.PropertyChanged += ExitSignalFilterPropertyChanged;
 
             Add(_ha);
             Add(_paperFeet);
@@ -503,25 +480,15 @@ namespace gambcl.ATAS.Indicators
             // Exit short - Opposite color trend dot.
             bool exitShortOppositeTrendDot = (emaFast < emaSlow) && (trend0 == 1) && (trend1 == 1) && (trend1 != trend2);
 
-            if (exitLongOppositeFlatTop && ExitLongOppFlatTopSignalColor.Enabled)
+            if (ExitLongSignalColor.Enabled && (exitLongOppositeFlatTop || exitLongOppositeTrendDot))
             {
                 _exitSeries[bar] = haCandleSeries[bar].High + (ExitSignalOffset * InstrumentInfo.TickSize);
-                _exitSeries.Colors[bar] = ExitLongOppFlatTopSignalColor.Value.Convert();
+                _exitSeries.Colors[bar] = ExitLongSignalColor.Value.Convert();
             }
-            else if (exitLongOppositeTrendDot && ExitLongOppTrendDotSignalColor.Enabled)
-            {
-                _exitSeries[bar] = haCandleSeries[bar].High + (ExitSignalOffset * InstrumentInfo.TickSize);
-                _exitSeries.Colors[bar] = ExitLongOppTrendDotSignalColor.Value.Convert();
-            }
-            else if (exitShortOppositeFlatBottom && ExitShortOppFlatBottomSignalColor.Enabled)
+            else if (ExitShortSignalColor.Enabled && (exitShortOppositeFlatBottom || exitShortOppositeTrendDot))
             {
                 _exitSeries[bar] = haCandleSeries[bar].Low - (ExitSignalOffset * InstrumentInfo.TickSize);
-                _exitSeries.Colors[bar] = ExitShortOppFlatBottomSignalColor.Value.Convert();
-            }
-            else if (exitShortOppositeTrendDot && ExitShortOppTrendDotSignalColor.Enabled)
-            {
-                _exitSeries[bar] = haCandleSeries[bar].Low - (ExitSignalOffset * InstrumentInfo.TickSize);
-                _exitSeries.Colors[bar] = ExitShortOppTrendDotSignalColor.Value.Convert();
+                _exitSeries.Colors[bar] = ExitShortSignalColor.Value.Convert();
             }
             else
             {
@@ -529,56 +496,46 @@ namespace gambcl.ATAS.Indicators
             }
 
             // Alerts
-            if (bar == (CurrentBar - 1) && InstrumentInfo is not null)
+            if ((_lastBar != bar) && (bar == CurrentBar - 1) && InstrumentInfo is not null)
             {
-                if (EnterLongSignalColor.Enabled && EnterLongSignalAlertFilter.Enabled && (entrySignal > 0) && (bar != _lastEnterLongSignalAlertBar))
+                if (EnterLongSignalColor.Enabled && EnterLongSignalAlertFilter.Enabled && (_enterLongSeries[bar - 1] != 0m))
                 {
-                    AddAlert(EnterLongSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Enter LONG: Laguerre RSI leaving oversold region {_paperFeet[bar]:0.#}", DefaultColors.Black.Convert(), EnterLongSignalColor.Value);
-                    _lastEnterLongSignalAlertBar = bar;
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(EnterLongSignalAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"Enter LONG: Laguerre RSI exited oversold region {_paperFeet[bar - 1]:0.#}", DefaultColors.Black.Convert(), EnterLongSignalColor.Value);
                 }
 
-                if (EnterShortSignalColor.Enabled && EnterShortSignalAlertFilter.Enabled && (entrySignal < 0) && (bar != _lastEnterShortSignalAlertBar))
+                if (EnterShortSignalColor.Enabled && EnterShortSignalAlertFilter.Enabled && (_enterShortSeries[bar - 1] != 0m))
                 {
-                    AddAlert(EnterShortSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Enter SHORT: Laguerre RSI leaving overbought region {_paperFeet[bar]:0.#}", DefaultColors.Black.Convert(), EnterShortSignalColor.Value);
-                    _lastEnterShortSignalAlertBar = bar;
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(EnterShortSignalAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"Enter SHORT: Laguerre RSI exited overbought region {_paperFeet[bar - 1]:0.#}", DefaultColors.Black.Convert(), EnterShortSignalColor.Value);
                 }
 
-                if (ReenterLongSignalColor.Enabled && ReenterLongSignalAlertFilter.Enabled && reenterLongSameTrendDot && (bar != _lastReenterLongSignalAlertBar))
+                if (ReenterLongSignalColor.Enabled && ReenterLongSignalAlertFilter.Enabled && (_reenterLongSeries[bar - 1] != 0m))
                 {
-                    AddAlert(ReenterLongSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Re-enter LONG: Trend returning to bullish", DefaultColors.Black.Convert(), ReenterLongSignalColor.Value);
-                    _lastReenterLongSignalAlertBar = bar;
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(ReenterLongSignalAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"Re-enter LONG: Trend returning to bullish", DefaultColors.Black.Convert(), ReenterLongSignalColor.Value);
                 }
 
-                if (ReenterShortSignalColor.Enabled && ReenterShortSignalAlertFilter.Enabled && reenterShortSameTrendDot && (bar != _lastReenterShortSignalAlertBar))
+                if (ReenterShortSignalColor.Enabled && ReenterShortSignalAlertFilter.Enabled && (_reenterShortSeries[bar - 1] != 0m))
                 {
-                    AddAlert(ReenterShortSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Re-enter SHORT: Trend returning to bearish", DefaultColors.Black.Convert(), ReenterShortSignalColor.Value);
-                    _lastReenterShortSignalAlertBar = bar;
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(ReenterShortSignalAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"Re-enter SHORT: Trend returning to bearish", DefaultColors.Black.Convert(), ReenterShortSignalColor.Value);
                 }
 
-                if (ExitLongOppFlatTopSignalColor.Enabled && ExitLongOppFlatTopSignalAlertFilter.Enabled && exitLongOppositeFlatTop && (bar != _lastExitLongOppFlatTopSignalAlertBar))
+                if (ExitLongSignalColor.Enabled && ExitLongSignalAlertFilter.Enabled && (_exitSeries[bar - 1] != 0m) && (_exitSeries.Colors[bar - 1] == ExitLongSignalColor.Value.Convert()))
                 {
-                    AddAlert(ExitLongOppFlatTopSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Exit LONG: Bearish HA candle with flat top", DefaultColors.Black.Convert(), ExitLongOppFlatTopSignalColor.Value);
-                    _lastExitLongOppFlatTopSignalAlertBar = bar;
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(ExitLongSignalAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"Exit LONG", DefaultColors.Black.Convert(), ExitLongSignalColor.Value);
                 }
 
-                if (ExitShortOppFlatBottomSignalColor.Enabled && ExitShortOppFlatBottomSignalAlertFilter.Enabled && exitShortOppositeFlatBottom && (bar != _lastExitShortOppFlatBottomSignalAlertBar))
+                if (ExitShortSignalColor.Enabled && ExitShortSignalAlertFilter.Enabled && (_exitSeries[bar - 1] != 0m) && (_exitSeries.Colors[bar - 1] == ExitShortSignalColor.Value.Convert()))
                 {
-                    AddAlert(ExitShortOppFlatBottomSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Exit SHORT: Bullish HA candle with flat bottom", DefaultColors.Black.Convert(), ExitShortOppFlatBottomSignalColor.Value);
-                    _lastExitShortOppFlatBottomSignalAlertBar = bar;
-                }
-
-                if (ExitLongOppTrendDotSignalColor.Enabled && ExitLongOppTrendDotSignalAlertFilter.Enabled && exitLongOppositeTrendDot && (bar != _lastExitLongOppTrendDotSignalAlertBar))
-                {
-                    AddAlert(ExitLongOppTrendDotSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Exit LONG: Opposite trend dot", DefaultColors.Black.Convert(), ExitLongOppTrendDotSignalColor.Value);
-                    _lastExitLongOppTrendDotSignalAlertBar = bar;
-                }
-
-                if (ExitShortOppTrendDotSignalColor.Enabled && ExitShortOppTrendDotSignalAlertFilter.Enabled && exitShortOppositeTrendDot && (bar != _lastExitShortOppTrendDotSignalAlertBar))
-                {
-                    AddAlert(ExitShortOppTrendDotSignalAlertFilter.Value, InstrumentInfo.Instrument, $"Exit SHORT: Opposite trend dot", DefaultColors.Black.Convert(), ExitShortOppTrendDotSignalColor.Value);
-                    _lastExitShortOppTrendDotSignalAlertBar = bar;
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(ExitShortSignalAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"Exit SHORT", DefaultColors.Black.Convert(), ExitShortSignalColor.Value);
                 }
             }
+
+            _lastBar = bar;
         }
 
         protected override void OnRender(RenderContext context, DrawingLayouts layout)

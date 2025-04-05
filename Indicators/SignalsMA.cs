@@ -1,6 +1,7 @@
 ﻿using ATAS.Indicators;
 using ATAS.Indicators.Drawing;
 using ATAS.Indicators.Technical;
+using gambcl.ATAS.Indicators.Helpers;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
@@ -27,11 +28,19 @@ namespace gambcl.ATAS.Indicators
 
         #endregion
 
+        #region Constants
+
+        const int DefaultSignalWidth = 2;
+        const int DefaultSignalOffset = 1;
+
+        #endregion
+
         #region Members
 
         private MATypeEnum _maType = MATypeEnum.SMA;
         private int _period = 9;
-        private int _signalOffset = 0;
+        private int _signalWidth = DefaultSignalWidth;
+        private int _signalOffset = DefaultSignalOffset;
         private SMA _sma = new();
         private EMA _ema = new();
         private readonly ValueDataSeries _maSeries = new("MA", "Moving Average")
@@ -44,14 +53,14 @@ namespace gambcl.ATAS.Indicators
         {
             VisualType = VisualMode.UpArrow,
             Color = DefaultColors.Green.Convert(),
-            Width = 2,
+            Width = DefaultSignalWidth,
             ShowTooltip = false
         };
         private readonly ValueDataSeries _sellSignalsSeries = new("SellSignal", "Sell Signal")
         {
             VisualType = VisualMode.DownArrow,
             Color = DefaultColors.Red.Convert(),
-            Width = 2,
+            Width = DefaultSignalWidth,
             ShowTooltip = false
         };
         private int _lastBar = 0;
@@ -91,7 +100,22 @@ namespace gambcl.ATAS.Indicators
             }
         }
 
-        [Display(Name = "Offset", GroupName = "Signals", Description = "The vertical offset between signal and bar.", Order = 101)]
+        [Display(Name = "Width", GroupName = "Signals", Description = "Controls the size of the signals on the chart.", Order = 101)]
+        [Range(0, 1000)]
+        public int SignalWidth
+        {
+            get => _signalWidth;
+
+            set
+            {
+                _signalWidth = value;
+                _buySignalsSeries.Width = value;
+                _sellSignalsSeries.Width = value;
+                RecalculateValues();
+            }
+        }
+
+        [Display(Name = "Offset", GroupName = "Signals", Description = "The vertical offset between signal and bar.", Order = 102)]
         [Range(0, 1000)]
         public int SignalOffset
         {
@@ -110,6 +134,9 @@ namespace gambcl.ATAS.Indicators
         [Display(Name = "Sell Alerts", GroupName = "Alerts", Description = "When enabled, an alert is triggered when price crosses and closes below the Moving Average, using the specified sound file.", Order = 202)]
         public FilterString SellAlertFilter { get; set; }
 
+        [Display(Name = "Alert Sounds Path", GroupName = "Alerts", Description = "Location of alert audio files.", Order = 203)]
+        public string AlertSoundsPath { get; set; }
+
         #endregion
 
         #region Constructor
@@ -123,10 +150,12 @@ namespace gambcl.ATAS.Indicators
 
             MAType = MATypeEnum.SMA;
             Period = 9;
-            SignalOffset = 1;
+            SignalWidth = DefaultSignalWidth;
+            SignalOffset = DefaultSignalOffset;
 
-            BuyAlertFilter = new(true) { Value = "alert1" };
-            SellAlertFilter = new(true) { Value = "alert1" };
+            BuyAlertFilter = new(true) { Enabled = false, Value = "BuySignal.wav" };
+            SellAlertFilter = new(true) { Enabled = false, Value = "SellSignal.wav" };
+            AlertSoundsPath = SoundPackHelper.DefaultAlertFilePath();
         }
 
         #endregion
@@ -156,11 +185,13 @@ namespace gambcl.ATAS.Indicators
             {
                 if (BuyAlertFilter.Enabled && _buySignalsSeries[bar - 1] != 0)
                 {
-                    AddAlert(BuyAlertFilter.Value, InstrumentInfo.Instrument, $"BUY SIGNAL: Price crossed and closed above the {Period} {MAType}", DefaultColors.Black.Convert(), _buySignalsSeries.ValuesColor.Convert());
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(BuyAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"BUY SIGNAL: Price crossed and closed above the {Period} {MAType}", DefaultColors.Black.Convert(), _buySignalsSeries.ValuesColor.Convert());
                 }
                 if (SellAlertFilter.Enabled && _sellSignalsSeries[bar - 1] != 0)
                 {
-                    AddAlert(SellAlertFilter.Value, InstrumentInfo.Instrument, $"SELL SIGNAL: Price crossed and closed below the {Period} {MAType}", DefaultColors.Black.Convert(), _sellSignalsSeries.ValuesColor.Convert());
+                    string audioFile = SoundPackHelper.ResolveAlertFilePath(SellAlertFilter.Value, AlertSoundsPath);
+                    AddAlert(audioFile, InstrumentInfo.Instrument, $"SELL SIGNAL: Price crossed and closed below the {Period} {MAType}", DefaultColors.Black.Convert(), _sellSignalsSeries.ValuesColor.Convert());
                 }
             }
 
